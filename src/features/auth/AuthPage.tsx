@@ -143,9 +143,9 @@ export const AuthPage: React.FC = () => {
           {/* Mobile Logo Header */}
           <div className="flex items-center gap-2 mb-6 lg:hidden">
             <img src={logoImg} alt="EgolePay" className="h-7 w-auto object-contain" />
-            <span className="text-[10px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider bg-orange-100 text-[#FF7916]">
+            {/* <span className="text-[10px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider bg-orange-100 text-[#FF7916]">
               SaaS
-            </span>
+            </span> */}
           </div>
 
           {/* Mode Switcher Tabs */}
