@@ -11,11 +11,12 @@ interface BusinessState {
   getActiveBusiness: () => BusinessProfile;
   updateActiveBusiness: (updates: Partial<BusinessProfile>) => void;
   setActiveBusiness: (businessId: string) => void;
+  setBusinesses: (businesses: BusinessProfile[], activeId?: string) => void;
   addBusiness: (business: Omit<BusinessProfile, 'id' | 'createdAt'>) => BusinessProfile;
   resetToDefault: () => void;
 }
 
-const DEFAULT_BUSINESS: BusinessProfile = {
+export const DEFAULT_BUSINESS: BusinessProfile = {
   id: 'biz-default-01',
   name: 'EgolePay LTD',
   email: 'hello@egolepay.com',
@@ -78,6 +79,13 @@ export const useBusinessStore = create<BusinessState>()(
 
       setActiveBusiness: (businessId: string) => {
         set({ activeBusinessId: businessId });
+      },
+
+      setBusinesses: (businesses: BusinessProfile[], activeId?: string) => {
+        set({
+          businesses: businesses.length > 0 ? businesses : [DEFAULT_BUSINESS],
+          activeBusinessId: activeId || businesses[0]?.id || DEFAULT_BUSINESS.id,
+        });
       },
 
       addBusiness: (businessData) => {

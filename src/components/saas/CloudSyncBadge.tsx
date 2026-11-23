@@ -33,12 +33,8 @@ export const CloudSyncBadge: React.FC = () => {
       className="relative p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none"
       title={
         status === 'syncing'
-          ? 'Syncing changes to cloud...'
-          : status === 'offline'
-          ? 'Offline mode: changes saved locally in browser'
-          : status === 'error'
-          ? 'Sync error. Click to retry.'
-          : `Cloud synced at ${formattedTime || 'just now'}. Click to trigger sync.`
+          ? 'Saving changes...'
+          : 'Local mode: changes saved locally in browser (Zustand)'
       }
       aria-label="Cloud sync status"
     >

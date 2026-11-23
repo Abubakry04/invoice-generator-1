@@ -34,8 +34,6 @@ import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { SUPPORTED_CURRENCIES } from '../../lib/formatCurrency';
 import { InvoiceTemplate } from '../../types';
 import { exportWorkspaceBackup, restoreWorkspaceBackup } from '../../lib/backupService';
-import { isSupabaseConfigured } from '../../services/supabase/client';
-import { syncLocalToSupabase } from '../../services/supabase/syncService';
 
 type SettingsTab = 'profile' | 'invoicing' | 'branding' | 'data';
 
@@ -98,7 +96,6 @@ export const SettingsPage: React.FC = () => {
   const [confirmClearOpen, setConfirmClearOpen] = useState(false);
   const [confirmResetOpen, setConfirmResetOpen] = useState(false);
   const backupFileInputRef = useRef<HTMLInputElement>(null);
-  const [isSyncing, setIsSyncing] = useState(false);
 
   const handleExportBackup = () => {
     exportWorkspaceBackup();
@@ -121,22 +118,6 @@ export const SettingsPage: React.FC = () => {
       if (backupFileInputRef.current) backupFileInputRef.current.value = '';
     };
     reader.readAsText(file);
-  };
-
-  const handleSyncToCloud = async () => {
-    setIsSyncing(true);
-    try {
-      const res = await syncLocalToSupabase();
-      if (res.success) {
-        toast.success(res.message);
-      } else {
-        toast.error(res.message);
-      }
-    } catch (err) {
-      toast.error((err as Error).message);
-    } finally {
-      setIsSyncing(false);
-    }
   };
 
   // Handle Logo file upload to base64
@@ -696,50 +677,6 @@ export const SettingsPage: React.FC = () => {
                   <p className="text-xs text-slate-500 dark:text-slate-400">Catalog Items</p>
                 </div>
               </div>
-            </div>
-
-            {/* Cloud Database Integration (Supabase) */}
-            <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <Cloud className="w-4 h-4 text-blue-500" />
-                    <span>Supabase Cloud Database</span>
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    Connect to Supabase for multi-device sync, permanent backup, and live customer portal access.
-                  </p>
-                </div>
-                <span
-                  className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${
-                    isSupabaseConfigured
-                      ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
-                  }`}
-                >
-                  <span className={`w-2 h-2 rounded-full ${isSupabaseConfigured ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
-                  {isSupabaseConfigured ? 'Connected' : 'Offline Mode'}
-                </span>
-              </div>
-
-              {isSupabaseConfigured ? (
-                <div className="flex items-center gap-3 pt-1">
-                  <Button
-                    type="button"
-                    variant="primary"
-                    size="sm"
-                    icon={<Cloud className="w-4 h-4" />}
-                    onClick={handleSyncToCloud}
-                    disabled={isSyncing}
-                  >
-                    {isSyncing ? 'Syncing to Cloud...' : 'Sync Workspace to Supabase'}
-                  </Button>
-                </div>
-              ) : (
-                <p className="text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl border border-slate-200/80 dark:border-slate-800">
-                  Schema and migrations are ready in the <code className="font-mono text-slate-800 dark:text-slate-200">/supabase</code> folder. Add your <code className="font-mono text-slate-800 dark:text-slate-200">VITE_SUPABASE_URL</code> and <code className="font-mono text-slate-800 dark:text-slate-200">VITE_SUPABASE_ANON_KEY</code> to your <code className="font-mono text-slate-800 dark:text-slate-200">.env</code> file to enable cloud sync.
-                </p>
-              )}
             </div>
 
             {/* Complete Data Backup & Restore */}

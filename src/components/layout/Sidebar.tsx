@@ -49,7 +49,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { name: 'Settings', to: '/settings', icon: SettingsIcon },
   ];
 
-  const businessName = settings.business.name || 'EgolePay Hub';
+  const businessName = settings.business.name || 'Workspace';
 
   return (
     <>

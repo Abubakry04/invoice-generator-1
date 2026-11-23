@@ -34,6 +34,7 @@ interface ProductState {
   setStock: (id: string, stock: number) => void;
   deductStockForInvoice: (items: { productId?: string; quantity: number }[]) => number;
   restoreStockForInvoice: (items: { productId?: string; quantity: number }[]) => number;
+  setProducts: (products: ProductItem[]) => void;
   resetProducts: () => void;
   clearProducts: () => void;
 }
@@ -133,6 +134,8 @@ export const useProductStore = create<ProductState>()(
         });
         return totalRestored;
       },
+
+      setProducts: (products: ProductItem[]) => set({ products }),
 
       resetProducts: () => set({ products: INITIAL_PRODUCTS }),
 
