@@ -74,6 +74,7 @@ interface RegisterData {
   name: string;
   email: string;
   businessName: string;
+  phone?: string;
   password?: string;
 }
 
@@ -197,7 +198,7 @@ export const useAuthStore = create<AuthState>()(
         });
       },
 
-      register: ({ name, email, businessName, password }) => {
+      register: ({ name, email, businessName, phone, password }) => {
         // Save current active workspace before switching
         get().saveActiveWorkspace();
 
@@ -208,6 +209,7 @@ export const useAuthStore = create<AuthState>()(
           id: `usr-${Date.now()}`,
           name: name.trim(),
           email: normEmail,
+          phone: phone?.trim(),
           role: 'owner',
         };
 
@@ -215,7 +217,7 @@ export const useAuthStore = create<AuthState>()(
           id: `biz-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
           name: businessName.trim(),
           email: normEmail,
-          phone: '+234 800 000 0000',
+          phone: phone?.trim() || '+234 800 000 0000',
           address: 'Lagos, Nigeria',
           defaultCurrency: 'NGN',
           defaultTaxRate: 7.5,
