@@ -31,6 +31,7 @@ import { exportFinancialStatementCSV } from '../../lib/exportUtils';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { Button } from '../../components/ui/Button';
 import { InvoiceViewModal } from '../invoices/InvoiceViewModal';
+import { AnimatedNumber } from '../../components/ui/AnimatedNumber';
 import { Invoice, InvoiceStatus } from '../../types';
 
 export const DashboardPage: React.FC = () => {
@@ -140,66 +141,48 @@ export const DashboardPage: React.FC = () => {
   }, [invoices]);
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6 max-w-7xl mx-auto animate-page-enter">
       {/* 1. Clean Minimal Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Dashboard</h1>
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+              Dashboard
+            </h1>
             <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/70 dark:border-slate-700">
               {currentPlan.name}
             </span>
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 truncate">
             {settings.business.name || 'Workspace'} • Financial summary & invoice overview
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          <button
-            onClick={() => exportFinancialStatementCSV(invoices, currency)}
-            className="px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer"
-            title="Download complete financial ledger and revenue statement as CSV"
-          >
-            <Download className="w-3.5 h-3.5 text-slate-500" />
-            <span className="hidden sm:inline">Export Statement (CSV)</span>
-            <span className="sm:hidden">CSV</span>
-          </button>
-          {subscription.planId === 'free' && (
-            <button
-              onClick={() => openModal('upgrade', { targetPlan: 'starter', trigger: 'Upgrade for higher limits and payment links' })}
-              className="px-3 py-2 rounded-xl text-xs font-semibold text-[#FF7916] bg-orange-50 hover:bg-orange-100 dark:bg-orange-950/40 dark:hover:bg-orange-950/60 transition-colors flex items-center gap-1.5"
-            >
-              <Zap className="w-3.5 h-3.5 fill-current" />
-              <span>Upgrade Plan</span>
-            </button>
-          )}
-          {/* <Button
-            onClick={() => navigate('/invoices/new')}
-            size="md"
-            className="bg-[#FF7916] hover:bg-[#ea580c] active:bg-[#c2410c] text-white font-semibold shadow-xs"
-            icon={<Plus className="w-4 h-4 stroke-[2.5]" />}
-          >
-            <span className="hidden sm:inline">Create Invoice</span>
-            <span className="sm:hidden">New Invoice</span>
-          </Button> */}
-        </div>
+        <button
+          onClick={() => exportFinancialStatementCSV(invoices, currency)}
+          className="px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer btn-tactile shrink-0"
+          title="Download complete financial ledger and revenue statement as CSV"
+        >
+          <Download className="w-3.5 h-3.5 text-slate-500" />
+          <span className="hidden sm:inline">Export Statement (CSV)</span>
+          <span className="sm:hidden">CSV</span>
+        </button>
       </div>
 
-      {/* Near-Limit Warning (Only when Free plan is at 4 or 5 of 5) */}
-      {subscription.planId === 'free' && subscription.invoicesCreatedThisMonth >= 4 && (
-        <div className="p-3.5 rounded-2xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/60 flex items-center justify-between gap-3 text-xs">
+      {/* Near-Limit Warning (Dynamically adjusts to user's plan limit) */}
+      {subscription.planId !== 'business' && currentPlan.invoiceLimit !== Infinity && subscription.invoicesCreatedThisMonth >= Math.max(1, currentPlan.invoiceLimit - 1) && (
+        <div className="p-3.5 rounded-2xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/60 flex items-center justify-between gap-3 text-xs animate-soft-pulse">
           <div className="flex items-center gap-2.5">
             <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
             <span className="text-slate-700 dark:text-slate-300">
-              You have used <strong className="text-slate-900 dark:text-white">{subscription.invoicesCreatedThisMonth} of 5</strong> free invoices this month. Upgrade to Starter for 50 invoices and multi-currency support.
+              You have used <strong className="text-slate-900 dark:text-white">{subscription.invoicesCreatedThisMonth} of {currentPlan.invoiceLimit}</strong> invoices on your {currentPlan.name}. Upgrade your plan for higher volume and features.
             </span>
           </div>
           <button
-            onClick={() => openModal('upgrade', { targetPlan: 'starter', trigger: 'Upgrade before hitting limit' })}
-            className="font-bold text-[#FF7916] hover:underline shrink-0"
+            onClick={() => navigate('/subscription')}
+            className="font-bold text-[#FF7916] hover:underline shrink-0 cursor-pointer"
           >
-            Upgrade ($15/mo)
+            Manage Plan →
           </button>
         </div>
       )}
@@ -207,7 +190,7 @@ export const DashboardPage: React.FC = () => {
       {/* 2. Four Clean KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Invoiced */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs row-interactive">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Total Invoiced</span>
             <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400">
@@ -215,7 +198,7 @@ export const DashboardPage: React.FC = () => {
             </div>
           </div>
           <div className="text-xl sm:text-2xl font-bold font-mono text-slate-900 dark:text-white">
-            {formatCurrency(stats.totalInvoiced, currency)}
+            <AnimatedNumber value={stats.totalInvoiced} currency={currency} />
           </div>
           <p className="text-[11px] text-slate-400 mt-1">
             {stats.totalCount} total {stats.totalCount === 1 ? 'invoice' : 'invoices'}
@@ -223,7 +206,7 @@ export const DashboardPage: React.FC = () => {
         </div>
 
         {/* Collected */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs row-interactive">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Collected (Paid)</span>
             <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400">
@@ -231,7 +214,7 @@ export const DashboardPage: React.FC = () => {
             </div>
           </div>
           <div className="text-xl sm:text-2xl font-bold font-mono text-emerald-600 dark:text-emerald-400">
-            {formatCurrency(stats.totalPaid, currency)}
+            <AnimatedNumber value={stats.totalPaid} currency={currency} />
           </div>
           <p className="text-[11px] text-slate-400 mt-1">
             {stats.paidCount} fulfilled payments
@@ -239,7 +222,7 @@ export const DashboardPage: React.FC = () => {
         </div>
 
         {/* Outstanding */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs row-interactive">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Outstanding Balance</span>
             <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400">
@@ -247,7 +230,7 @@ export const DashboardPage: React.FC = () => {
             </div>
           </div>
           <div className="text-xl sm:text-2xl font-bold font-mono text-slate-900 dark:text-white">
-            {formatCurrency(stats.totalOutstanding, currency)}
+            <AnimatedNumber value={stats.totalOutstanding} currency={currency} />
           </div>
           <p className="text-[11px] text-slate-400 mt-1">
             Awaiting client remittance
@@ -255,15 +238,15 @@ export const DashboardPage: React.FC = () => {
         </div>
 
         {/* Overdue */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs row-interactive">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Overdue</span>
-            <div className="p-2 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400">
+            <div className={`p-2 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 ${stats.overdueCount > 0 ? 'animate-soft-pulse' : ''}`}>
               <AlertTriangle className="w-4 h-4" />
             </div>
           </div>
           <div className="text-xl sm:text-2xl font-bold font-mono text-rose-600 dark:text-rose-400">
-            {formatCurrency(stats.totalOverdue, currency)}
+            <AnimatedNumber value={stats.totalOverdue} currency={currency} />
           </div>
           <p className="text-[11px] text-rose-600/80 dark:text-rose-400/80 mt-1 font-medium">
             {stats.overdueCount} {stats.overdueCount === 1 ? 'invoice requires' : 'invoices require'} follow-up
@@ -289,14 +272,14 @@ export const DashboardPage: React.FC = () => {
               <span className="text-xs font-mono font-semibold text-slate-500">
                 {formatCurrency(stats.totalInvoiced, currency)} total
               </span>
-              <button
+              {/* <button
                 onClick={() => exportFinancialStatementCSV(invoices, currency)}
                 className="text-[11px] font-semibold text-[#FF7916] hover:underline flex items-center gap-1 cursor-pointer"
                 title="Download financial statement CSV"
               >
                 <Download className="w-3 h-3" />
                 <span>CSV</span>
-              </button>
+              </button> */}
             </div>
           </div>
 
@@ -410,7 +393,7 @@ export const DashboardPage: React.FC = () => {
                   <div
                     key={inv.id}
                     onClick={() => navigate(`/invoices/${inv.id}/edit`)}
-                    className="p-3.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 hover:bg-slate-100/60 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
+                    className="p-3.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 hover:bg-slate-100/60 dark:hover:bg-slate-800/60 transition-all cursor-pointer row-interactive"
                   >
                     <div className="flex items-center justify-between gap-2 mb-1.5">
                       <span className="font-mono font-bold text-sm text-slate-900 dark:text-white">
@@ -480,7 +463,7 @@ export const DashboardPage: React.FC = () => {
                       <tr
                         key={inv.id}
                         onClick={() => navigate(`/invoices/${inv.id}/edit`)}
-                        className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors cursor-pointer group"
+                        className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-all cursor-pointer group row-interactive"
                       >
                         <td className="py-3.5 px-6 font-mono font-bold text-slate-900 dark:text-white group-hover:text-[#FF7916] transition-colors whitespace-nowrap">
                           {inv.number}

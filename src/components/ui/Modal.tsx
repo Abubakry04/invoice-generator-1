@@ -6,8 +6,12 @@ export interface ModalProps {
   onClose: () => void;
   title: string;
   description?: string;
+  icon?: React.ReactNode;
+  badge?: React.ReactNode;
   children: React.ReactNode;
+  footer?: React.ReactNode;
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl';
+  className?: string;
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -15,8 +19,12 @@ export const Modal: React.FC<ModalProps> = ({
   onClose,
   title,
   description,
+  icon,
+  badge,
   children,
+  footer,
   maxWidth = 'md',
+  className = '',
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -57,38 +65,67 @@ export const Modal: React.FC<ModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 overflow-y-auto"
       role="dialog"
       aria-modal="true"
     >
-      {/* Backdrop */}
+      {/* Backdrop with smooth blur and fade */}
       <div
-        className="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-slate-950/65 dark:bg-black/80 backdrop-blur-md transition-opacity animate-in fade-in duration-200"
         onClick={onClose}
+        aria-hidden="true"
       />
 
-      {/* Modal Dialog */}
+      {/* Modal Card Surface */}
       <div
         ref={modalRef}
-        className={`relative w-full ${maxWidthClass} bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-4 sm:p-6 z-10 transition-all transform animate-in fade-in zoom-in-95 duration-200 my-auto`}
+        className={`relative w-full ${maxWidthClass} bg-white dark:bg-slate-900 rounded-3xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3),0_0_0_1px_rgba(255,255,255,0.06)] border border-slate-200/90 dark:border-slate-800 p-5 sm:p-6 z-10 transition-all transform animate-in fade-in-0 zoom-in-95 duration-200 ease-out my-auto ${className}`}
       >
-        <div className="flex items-start justify-between gap-3 mb-4 sm:mb-5">
-          <div>
-            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">{title}</h3>
-            {description && (
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{description}</p>
+        {/* Header */}
+        <div className="flex items-start justify-between gap-3.5 pb-4 mb-4 border-b border-slate-100 dark:border-slate-800/80">
+          <div className="flex items-start gap-3 min-w-0">
+            {icon && (
+              <div className="w-10 h-10 rounded-2xl bg-orange-50 dark:bg-orange-950/40 border border-orange-100 dark:border-orange-900/50 text-[#FF7916] flex items-center justify-center shrink-0 shadow-2xs">
+                {icon}
+              </div>
             )}
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight">
+                  {title}
+                </h3>
+                {badge}
+              </div>
+              {description && (
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                  {description}
+                </p>
+              )}
+            </div>
           </div>
+
+          {/* Close Button */}
           <button
+            type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="p-2 rounded-2xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/80 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 active:scale-95 transition-all cursor-pointer shrink-0"
             aria-label="Close dialog"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        <div>{children}</div>
+        {/* Content Body */}
+        <div className="max-h-[calc(88vh-8rem)] overflow-y-auto pr-0.5 space-y-4">
+          {children}
+        </div>
+
+        {/* Optional Footer Slot */}
+        {footer && (
+          <div className="pt-4 mt-5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-end gap-2.5">
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   );

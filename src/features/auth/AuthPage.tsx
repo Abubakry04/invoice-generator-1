@@ -90,8 +90,8 @@ export const AuthPage: React.FC = () => {
         {/* Left Side: SaaS Value Proposition & Brand Banner */}
         <div className="hidden lg:flex lg:col-span-5 bg-gradient-to-br from-slate-900 via-slate-900 to-orange-950 text-white p-10 flex-col justify-between relative overflow-hidden">
           {/* Background Decorative Rings */}
-          <div className="absolute -right-20 -top-20 w-80 h-80 bg-[#FF7916]/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -left-20 -bottom-20 w-80 h-80 bg-orange-600/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -right-20 -top-20 w-80 h-80 bg-[#FF7916]/15 rounded-full blur-3xl pointer-events-none animate-soft-pulse" />
+          <div className="absolute -left-20 -bottom-20 w-80 h-80 bg-orange-600/15 rounded-full blur-3xl pointer-events-none animate-soft-pulse" />
 
           <div>
             <div className="flex items-center gap-3 mb-10">
@@ -148,14 +148,19 @@ export const AuthPage: React.FC = () => {
             </span> */}
           </div>
 
-          {/* Mode Switcher Tabs */}
-          <div className="flex p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl mb-8">
+          {/* Mode Switcher Tabs with Animated Sliding Pill */}
+          <div className="relative flex p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl mb-8">
+            <div
+              className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-white dark:bg-slate-900 rounded-xl shadow-xs transition-transform duration-200 ease-out ${
+                mode === 'login' ? 'translate-x-[calc(100%+4px)]' : 'translate-x-0'
+              }`}
+            />
             <button
               type="button"
               onClick={() => handleToggleMode('register')}
-              className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${
+              className={`relative z-10 flex-1 py-2 text-xs font-bold rounded-xl transition-colors ${
                 mode === 'register'
-                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
+                  ? 'text-slate-900 dark:text-white'
                   : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
@@ -164,9 +169,9 @@ export const AuthPage: React.FC = () => {
             <button
               type="button"
               onClick={() => handleToggleMode('login')}
-              className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${
+              className={`relative z-10 flex-1 py-2 text-xs font-bold rounded-xl transition-colors ${
                 mode === 'login'
-                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
+                  ? 'text-slate-900 dark:text-white'
                   : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
               }`}
             >

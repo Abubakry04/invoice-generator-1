@@ -4,6 +4,7 @@ import { InvoicePreview } from './InvoicePreview';
 import { InvoicePDFDownloadButton } from './InvoicePDFDownloadButton';
 import { RecordPaymentModal } from './RecordPaymentModal';
 import { PaymentReceiptModal } from './PaymentReceiptModal';
+import { SendInvoiceModal } from './SendInvoiceModal';
 import { Invoice, PaymentRecord } from '../../types';
 import { Button } from '../../components/ui/Button';
 import {
@@ -16,6 +17,7 @@ import {
   CheckCircle2,
   Receipt,
   Download,
+  Send,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { formatCurrency } from '../../lib/formatCurrency';
@@ -43,6 +45,7 @@ export const InvoiceViewModal: React.FC<InvoiceViewModalProps> = ({
 
   const [activeTab, setActiveTab] = useState<'document' | 'payments'>(initialTab);
   const [showRecordPayment, setShowRecordPayment] = useState(false);
+  const [showSendModal, setShowSendModal] = useState(false);
   const [selectedReceipt, setSelectedReceipt] = useState<PaymentRecord | null>(null);
 
   useEffect(() => {
@@ -70,8 +73,9 @@ export const InvoiceViewModal: React.FC<InvoiceViewModalProps> = ({
       <Modal
         isOpen={isOpen}
         onClose={onClose}
+        icon={<FileText className="w-5 h-5 text-[#FF7916]" />}
         title={`Invoice ${liveInvoice.number}`}
-        description={`${liveInvoice.client.name} • ${formatCurrency(totals.total, liveInvoice.currency)}`}
+        description={`${liveInvoice.client.name} • Total: ${formatCurrency(totals.total, liveInvoice.currency)}`}
         maxWidth="4xl"
       >
         <div className="space-y-4">
@@ -111,14 +115,25 @@ export const InvoiceViewModal: React.FC<InvoiceViewModalProps> = ({
 
             {/* Quick Actions */}
             <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                icon={<Send className="w-3.5 h-3.5" />}
+                onClick={() => setShowSendModal(true)}
+                className="bg-[#FF7916] hover:bg-[#ea580c] text-white font-bold text-xs shadow-xs"
+              >
+                Send Invoice
+              </Button>
+
               {remaining > 0 && (
                 <Button
                   type="button"
-                  variant="primary"
+                  variant="outline"
                   size="sm"
-                  icon={<CreditCard className="w-3.5 h-3.5" />}
+                  icon={<CreditCard className="w-3.5 h-3.5 text-emerald-500" />}
                   onClick={() => setShowRecordPayment(true)}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs"
+                  className="text-xs font-semibold"
                 >
                   Record Payment
                 </Button>
@@ -291,6 +306,13 @@ export const InvoiceViewModal: React.FC<InvoiceViewModalProps> = ({
         payment={selectedReceipt}
         isOpen={selectedReceipt !== null}
         onClose={() => setSelectedReceipt(null)}
+      />
+
+      {/* Send Invoice Multi-Channel Modal */}
+      <SendInvoiceModal
+        isOpen={showSendModal}
+        onClose={() => setShowSendModal(false)}
+        invoice={liveInvoice}
       />
     </>
   );

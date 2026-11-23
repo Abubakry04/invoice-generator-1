@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { GlobalSearchModal } from './GlobalSearchModal';
@@ -53,6 +53,8 @@ export const AppLayout: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [searchOpen]);
 
+  const location = useLocation();
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex">
       {/* Sidebar Navigation */}
@@ -65,7 +67,9 @@ export const AppLayout: React.FC = () => {
           onOpenSearch={() => setSearchOpen(true)}
         />
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
-          <Outlet />
+          <div key={location.pathname} className="animate-page-enter">
+            <Outlet />
+          </div>
         </main>
       </div>
 

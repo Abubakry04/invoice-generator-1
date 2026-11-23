@@ -36,6 +36,7 @@ import { InvoiceViewModal } from './InvoiceViewModal';
 import { RecordPaymentModal } from './RecordPaymentModal';
 import { CreateRecurringModal } from './CreateRecurringModal';
 import { ExportInvoicesModal } from './ExportInvoicesModal';
+import { SendInvoiceModal } from './SendInvoiceModal';
 import { pdf } from '@react-pdf/renderer';
 import { InvoicePDF } from './InvoicePDF';
 import { useToast } from '../../components/ui/Toast';
@@ -70,6 +71,7 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
   const [deletingInvoiceId, setDeletingInvoiceId] = useState<string | null>(null);
   const [paymentModalInvoice, setPaymentModalInvoice] = useState<Invoice | null>(null);
   const [recurringModalInvoice, setRecurringModalInvoice] = useState<Invoice | null>(null);
+  const [sendModalInvoice, setSendModalInvoice] = useState<Invoice | null>(null);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [menuCoords, setMenuCoords] = useState<{
     top: number;
@@ -375,6 +377,14 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
+                      <button
+                        type="button"
+                        onClick={() => setSendModalInvoice(inv)}
+                        className="p-2 rounded-xl text-slate-500 hover:text-[#FF7916] dark:text-slate-400 dark:hover:text-[#FF7916] hover:bg-orange-50 dark:hover:bg-orange-950/40 transition-colors"
+                        title="Send / Share Invoice"
+                      >
+                        <Send className="w-4 h-4" />
+                      </button>
                       {effectiveStatus !== 'paid' && (
                         <button
                           type="button"
@@ -521,6 +531,16 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
                               <Edit2 className="w-4 h-4" />
                             </button>
 
+                            {/* Quick Send */}
+                            <button
+                              type="button"
+                              onClick={() => setSendModalInvoice(inv)}
+                              className="p-1.5 rounded-lg text-slate-500 hover:text-[#FF7916] hover:bg-orange-50 dark:hover:bg-orange-950/50 transition-colors"
+                              title="Send / Share Invoice"
+                            >
+                              <Send className="w-4 h-4" />
+                            </button>
+
                             {/* More dropdown trigger */}
                             <button
                               type="button"
@@ -597,6 +617,21 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
               >
                 <Edit2 className={`${isMobile ? 'w-4 h-4' : 'w-3.5 h-3.5'} text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 shrink-0`} />
                 <span>Edit Invoice</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const inv = activeMenuInvoice;
+                  closeMenu();
+                  setSendModalInvoice(inv);
+                }}
+                className={`w-full flex items-center gap-2.5 rounded-xl font-semibold text-slate-700 dark:text-slate-200 hover:bg-orange-50 dark:hover:bg-orange-950/40 hover:text-[#FF7916] transition-colors cursor-pointer group ${
+                  isMobile ? 'px-3 py-2.5 text-sm' : 'px-2.5 py-1.5 text-xs'
+                }`}
+              >
+                <Send className={`${isMobile ? 'w-4 h-4' : 'w-3.5 h-3.5'} text-[#FF7916] shrink-0`} />
+                <span>Send / Share Invoice</span>
               </button>
 
               <button
@@ -971,6 +1006,13 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}
         invoices={invoices}
+      />
+
+      {/* Send Invoice Multi-Channel Modal */}
+      <SendInvoiceModal
+        isOpen={Boolean(sendModalInvoice)}
+        onClose={() => setSendModalInvoice(null)}
+        invoice={sendModalInvoice}
       />
     </div>
   );

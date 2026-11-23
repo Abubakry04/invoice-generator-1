@@ -87,17 +87,19 @@ export const SubscriptionPage: React.FC = () => {
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             {/* Quick Switch Pills */}
             {/* <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
-              <span className="text-[10px] font-semibold text-slate-400 px-1.5">Switch Tier:</span>
+              <span className="text-[10px] font-semibold text-slate-400 px-1.5">Active Plan:</span>
               {(['free', 'starter', 'business'] as SubscriptionPlanId[]).map((pid) => (
                 <button
                   key={pid}
                   type="button"
                   onClick={() => handleSwitchPlan(pid)}
-                  className={`text-[11px] font-bold px-2.5 py-1 rounded-lg capitalize transition-all ${
+                  className={`text-[11px] font-bold px-2.5 py-1 rounded-lg capitalize transition-all cursor-pointer ${
                     subscription.planId === pid
                       ? pid === 'business'
                         ? 'bg-purple-600 text-white shadow-xs'
-                        : 'bg-[#FF7916] text-white shadow-xs'
+                        : pid === 'starter'
+                        ? 'bg-[#FF7916] text-white shadow-xs'
+                        : 'bg-emerald-600 text-white shadow-xs'
                       : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-700'
                   }`}
                 >
@@ -105,15 +107,6 @@ export const SubscriptionPage: React.FC = () => {
                 </button>
               ))}
             </div> */}
-
-            {/* <Button
-              onClick={() => openModal('upgrade', { trigger: 'Manage your plan & limits' })}
-              className="bg-[#FF7916] hover:bg-[#ea580c] active:bg-[#c2410c] text-white font-semibold shadow-xs"
-              icon={<Zap className="w-4 h-4 fill-current" />}
-            >
-              <span className="hidden sm:inline">Checkout Preview</span>
-              <span className="sm:hidden">Upgrade</span>
-            </Button> */}
           </div>
         </div>
 
@@ -158,20 +151,30 @@ export const SubscriptionPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {planList.map((plan) => {
             const isCurrent = subscription.planId === plan.id;
-            const isHighlight = plan.id === 'starter';
+            const borderStyle = isCurrent
+              ? plan.id === 'business'
+                ? 'border-purple-500 bg-purple-50/20 dark:bg-purple-950/20 shadow-md ring-2 ring-purple-500/20'
+                : plan.id === 'starter'
+                ? 'border-[#FF7916] bg-orange-50/20 dark:bg-orange-950/20 shadow-md ring-2 ring-[#FF7916]/20'
+                : 'border-emerald-500 bg-emerald-50/20 dark:bg-emerald-950/20 shadow-md ring-2 ring-emerald-500/20'
+              : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900';
 
             return (
               <div
                 key={plan.id}
-                className={`relative rounded-3xl p-6 sm:p-7 flex flex-col justify-between border transition-all ${
-                  isHighlight
-                    ? 'border-[#FF7916] bg-orange-50/20 dark:bg-orange-950/20 shadow-md'
-                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'
-                }`}
+                className={`relative rounded-3xl p-6 sm:p-7 flex flex-col justify-between border transition-all ${borderStyle}`}
               >
-                {isHighlight && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-[#FF7916] text-white text-[10px] font-extrabold uppercase tracking-wider shadow-xs">
-                    Most Popular
+                {isCurrent && (
+                  <span
+                    className={`absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full text-white text-[10px] font-extrabold uppercase tracking-wider shadow-xs ${
+                      plan.id === 'business'
+                        ? 'bg-purple-600'
+                        : plan.id === 'starter'
+                        ? 'bg-[#FF7916]'
+                        : 'bg-emerald-600'
+                    }`}
+                  >
+                    Active Plan
                   </span>
                 )}
 
@@ -180,10 +183,16 @@ export const SubscriptionPage: React.FC = () => {
                     <h3 className="font-bold text-lg text-slate-900 dark:text-white">
                       {plan.name}
                     </h3>
-                    {isCurrent && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                    {isCurrent ? (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
                         Current
                       </span>
+                    ) : (
+                      plan.id === 'starter' && (
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
+                          Popular
+                        </span>
+                      )
                     )}
                   </div>
 
@@ -220,9 +229,9 @@ export const SubscriptionPage: React.FC = () => {
                     className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all ${
                       isCurrent
                         ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed'
-                        : isHighlight
-                        ? 'bg-[#FF7916] hover:bg-[#ea580c] text-white shadow-md shadow-[#FF7916]/25'
-                        : 'bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100'
+                        : plan.id === 'business'
+                        ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-md shadow-purple-600/20 cursor-pointer'
+                        : 'bg-[#FF7916] hover:bg-[#ea580c] text-white shadow-md shadow-[#FF7916]/25 cursor-pointer'
                     }`}
                   >
                     {isCurrent ? 'Current Plan' : `Switch to ${plan.name}`}

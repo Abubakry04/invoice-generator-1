@@ -60,7 +60,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             <div
               key={toast.id}
               role="alert"
-              className={`pointer-events-auto flex items-center justify-between gap-3 px-4 py-3 rounded-xl shadow-lg border backdrop-blur-md transition-all duration-300 animate-in slide-in-from-bottom-3 ${
+              className={`relative overflow-hidden pointer-events-auto flex items-center justify-between gap-3 px-4 py-3 rounded-xl shadow-xl border backdrop-blur-md transition-all duration-300 animate-in slide-in-from-right-6 fade-in-0 ${
                 isSuccess
                   ? 'bg-emerald-50/95 dark:bg-emerald-950/90 border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-100'
                   : isError
@@ -76,11 +76,19 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               </div>
               <button
                 onClick={() => removeToast(toast.id)}
-                className="p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors opacity-70 hover:opacity-100"
+                className="p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors opacity-70 hover:opacity-100 cursor-pointer"
                 aria-label="Close notification"
               >
                 <X className="w-4 h-4" />
               </button>
+
+              {/* Animated Auto-Dismiss Progress Bar */}
+              <div
+                className="absolute bottom-0 left-0 h-0.5 bg-current opacity-30 rounded-b-xl"
+                style={{
+                  animation: `shrinkWidth ${toast.duration || 3500}ms linear forwards`,
+                }}
+              />
             </div>
           );
         })}

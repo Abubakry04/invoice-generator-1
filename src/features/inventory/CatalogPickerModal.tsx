@@ -45,8 +45,10 @@ export const CatalogPickerModal: React.FC<CatalogPickerModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
+      icon={<Package className="w-5 h-5 text-[#FF7916]" />}
       title="Select from Catalog"
       description="Choose a saved product or service to automatically populate your line item and verify stock."
+      maxWidth="lg"
     >
       <div className="space-y-4">
         {/* Search & Tabs */}

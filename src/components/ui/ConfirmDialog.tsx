@@ -27,23 +27,36 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   isLoading = false,
 }) => {
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={title} maxWidth="sm">
-      <div className="space-y-4">
-        <div className="flex items-start gap-3">
-          <div
-            className={`p-2 rounded-xl shrink-0 ${
-              variant === 'danger'
-                ? 'bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400'
-                : 'bg-blue-100 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400'
-            }`}
-          >
-            <AlertTriangle className="w-5 h-5" />
-          </div>
-          <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{message}</p>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={title}
+      maxWidth="sm"
+      icon={
+        <div
+          className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
+            variant === 'danger'
+              ? 'bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-200 dark:border-rose-900/40'
+              : 'bg-blue-100 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 border border-blue-200 dark:border-blue-900/40'
+          }`}
+        >
+          <AlertTriangle className="w-5 h-5" />
         </div>
+      }
+    >
+      <div className="space-y-4">
+        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+          {message}
+        </p>
 
-        <div className="flex items-center justify-end gap-3 pt-2">
-          <Button variant="outline" size="sm" onClick={onClose} disabled={isLoading}>
+        <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onClose}
+            disabled={isLoading}
+            className="text-xs font-semibold"
+          >
             {cancelLabel}
           </Button>
           <Button
@@ -54,6 +67,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
               onClose();
             }}
             isLoading={isLoading}
+            className="text-xs font-bold shadow-xs"
           >
             {confirmLabel}
           </Button>

@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
 import {
   Repeat,
-  X,
   Calendar,
   CheckCircle2,
   Clock,
   Sparkles,
-  Info,
 } from 'lucide-react';
 import { Invoice, RecurringFrequency } from '../../types';
 import { useRecurringStore, computeNextRunDate } from '../../store/recurringStore';
@@ -15,6 +13,7 @@ import { useToast } from '../../components/ui/Toast';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
+import { Modal } from '../../components/ui/Modal';
 
 interface CreateRecurringModalProps {
   invoice: Invoice | null;
@@ -79,34 +78,17 @@ export const CreateRecurringModal: React.FC<CreateRecurringModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/80 backdrop-blur-xs">
-      <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-slate-100 dark:border-slate-800">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-orange-100 dark:bg-orange-950/80 text-[#FF7916] flex items-center justify-center shrink-0">
-              <Repeat className="w-4 h-4" />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                Set Recurring Retainer
-              </h3>
-              <p className="text-[11px] text-slate-400">
-                {invoice.number} • {invoice.client.name}
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      icon={<Repeat className="w-5 h-5 text-[#FF7916]" />}
+      title="Set Recurring Retainer"
+      description={`${invoice.number} • ${invoice.client.name}`}
+      maxWidth="lg"
+    >
+      <div className="space-y-4">
         {/* Informative banner */}
-        <div className="p-3.5 sm:p-4 bg-orange-50/70 dark:bg-orange-950/30 border-b border-orange-100 dark:border-orange-900/50 flex items-start gap-2.5 text-xs text-slate-600 dark:text-slate-300">
+        <div className="p-3.5 sm:p-4 bg-orange-50/70 dark:bg-orange-950/30 border border-orange-100 dark:border-orange-900/50 rounded-2xl flex items-start gap-2.5 text-xs text-slate-600 dark:text-slate-300">
           <Sparkles className="w-4 h-4 text-[#FF7916] shrink-0 mt-0.5" />
           <p>
             A new invoice cycle will be automatically created with updated dates on each scheduled date.
@@ -114,7 +96,7 @@ export const CreateRecurringModal: React.FC<CreateRecurringModalProps> = ({
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <Select
             label="Frequency"
             value={frequency}
@@ -182,7 +164,7 @@ export const CreateRecurringModal: React.FC<CreateRecurringModalProps> = ({
 
           {/* Action buttons */}
           <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100 dark:border-slate-800">
-            <Button type="button" variant="outline" size="sm" onClick={onClose}>
+            <Button type="button" variant="outline" size="sm" onClick={onClose} className="text-xs font-semibold">
               Cancel
             </Button>
             <Button
@@ -190,7 +172,7 @@ export const CreateRecurringModal: React.FC<CreateRecurringModalProps> = ({
               variant="primary"
               size="sm"
               disabled={isSubmitting}
-              className="bg-[#FF7916] hover:bg-[#ea580c] text-white font-bold px-4"
+              className="bg-[#FF7916] hover:bg-[#ea580c] text-white font-bold text-xs px-4 shadow-xs"
               icon={<CheckCircle2 className="w-4 h-4" />}
             >
               {isSubmitting ? 'Scheduling...' : 'Activate Retainer'}
@@ -198,7 +180,7 @@ export const CreateRecurringModal: React.FC<CreateRecurringModalProps> = ({
           </div>
         </form>
       </div>
-    </div>
+    </Modal>
   );
 };
 
