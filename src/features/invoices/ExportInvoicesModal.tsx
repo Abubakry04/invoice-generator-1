@@ -139,8 +139,9 @@ export const ExportInvoicesModal: React.FC<ExportInvoicesModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
+      icon={<FileSpreadsheet className="w-5 h-5 text-[#FF7916]" />}
       title="Export Invoices"
-      description="Choose a date range to download your spreadsheet."
+      description="Filter by date range and status to download your structured CSV / Excel spreadsheet."
       maxWidth="md"
     >
       <div className="space-y-4 text-xs text-slate-700 dark:text-slate-300">

@@ -105,8 +105,10 @@ export const ProductModal: React.FC<ProductModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
+      icon={type === 'product' ? <Package className="w-5 h-5 text-[#FF7916]" /> : <Wrench className="w-5 h-5 text-[#FF7916]" />}
       title={product ? 'Edit Item' : 'Add Item to Catalog'}
-      description="Save products with stock tracking or service items for fast, accurate invoicing."
+      description="Save products with live stock tracking or service items for fast, one-click invoicing."
+      maxWidth="lg"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Item Type Selector */}
@@ -118,14 +120,14 @@ export const ProductModal: React.FC<ProductModalProps> = ({
             <button
               type="button"
               onClick={() => setType('product')}
-              className={`p-3 rounded-xl border flex items-center gap-2.5 text-left transition-all ${
+              className={`p-3.5 rounded-2xl border flex items-center gap-3 text-left transition-all cursor-pointer ${
                 type === 'product'
-                  ? 'border-[#FF7916] bg-orange-50/50 dark:bg-orange-950/20 ring-2 ring-[#FF7916]/20'
+                  ? 'border-[#FF7916] bg-orange-50/70 dark:bg-orange-950/30 ring-2 ring-[#FF7916]/20 shadow-xs'
                   : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50'
               }`}
             >
               <div
-                className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-2xs ${
                   type === 'product'
                     ? 'bg-[#FF7916] text-white'
                     : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
@@ -133,23 +135,23 @@ export const ProductModal: React.FC<ProductModalProps> = ({
               >
                 <Package className="w-4 h-4" />
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <p className="text-xs font-bold text-slate-900 dark:text-white">Physical Product</p>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">Tracks stock count</p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">Tracks stock quantity</p>
               </div>
             </button>
 
             <button
               type="button"
               onClick={() => setType('service')}
-              className={`p-3 rounded-xl border flex items-center gap-2.5 text-left transition-all ${
+              className={`p-3.5 rounded-2xl border flex items-center gap-3 text-left transition-all cursor-pointer ${
                 type === 'service'
-                  ? 'border-[#FF7916] bg-orange-50/50 dark:bg-orange-950/20 ring-2 ring-[#FF7916]/20'
+                  ? 'border-[#FF7916] bg-orange-50/70 dark:bg-orange-950/30 ring-2 ring-[#FF7916]/20 shadow-xs'
                   : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50'
               }`}
             >
               <div
-                className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-2xs ${
                   type === 'service'
                     ? 'bg-[#FF7916] text-white'
                     : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
@@ -157,9 +159,9 @@ export const ProductModal: React.FC<ProductModalProps> = ({
               >
                 <Wrench className="w-4 h-4" />
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <p className="text-xs font-bold text-slate-900 dark:text-white">Service / Labor</p>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">No stock tracking</p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">No stock tracking</p>
               </div>
             </button>
           </div>
@@ -179,9 +181,9 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         />
 
         {/* SKU & Price */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           <Input
-            label="SKU / Item Code (Optional)"
+            label="Item Code / SKU (Optional)"
             value={sku}
             onChange={(e) => setSku(e.target.value)}
             placeholder="e.g. POS-V2-01"
@@ -205,7 +207,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
 
         {/* Stock Management Fields (Product Only) */}
         {type === 'product' && (
-          <div className="p-4 rounded-2xl bg-orange-50/40 dark:bg-orange-950/20 border border-orange-100 dark:border-orange-900/40 space-y-3">
+          <div className="p-4 rounded-2xl bg-orange-50/50 dark:bg-orange-950/20 border border-orange-200/80 dark:border-orange-900/40 space-y-3 animate-in fade-in-50 duration-200">
             <div className="flex items-center gap-2">
               <Package className="w-4 h-4 text-[#FF7916]" />
               <span className="text-xs font-bold uppercase tracking-wider text-orange-900 dark:text-orange-200">
@@ -236,7 +238,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                 value={lowStockThreshold}
                 onChange={(e) => setLowStockThreshold(e.target.value)}
                 placeholder="5"
-                helperText="Triggers warning when stock falls below this level"
+                helperText="Triggers warning when inventory drops below this"
               />
             </div>
           </div>
@@ -252,11 +254,11 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         />
 
         {/* Modal Buttons */}
-        <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
-          <Button type="button" variant="outline" size="sm" onClick={onClose}>
+        <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
+          <Button type="button" variant="outline" size="sm" onClick={onClose} className="text-xs font-semibold">
             Cancel
           </Button>
-          <Button type="submit" size="sm">
+          <Button type="submit" size="sm" className="bg-[#FF7916] hover:bg-[#ea580c] text-white font-bold text-xs shadow-xs">
             {product ? 'Save Changes' : 'Add to Catalog'}
           </Button>
         </div>

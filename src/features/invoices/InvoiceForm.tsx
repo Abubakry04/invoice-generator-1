@@ -537,146 +537,154 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form }) => {
             )}
           </div>
 
-          {/* Desktop Table Header */}
-          <div className="hidden md:grid grid-cols-12 gap-3 px-3 py-2 text-slate-400 text-xs font-semibold uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
-            <div className="col-span-1 text-center">#</div>
-            <div className="col-span-5">Description</div>
-            <div className="col-span-2 text-right">Qty</div>
-            <div className="col-span-2 text-right">Unit Price ({currencySymbol})</div>
-            <div className="col-span-2 text-right">Total</div>
-          </div>
+          <div className="overflow-x-auto pb-1 -mx-2 px-2">
+            <div className="min-w-[640px]">
+              {/* Desktop Table Header */}
+              <div className="flex items-center gap-2.5 px-3 py-2 text-slate-400 text-xs font-semibold uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
+                <div className="w-6 text-center shrink-0">#</div>
+                <div className="flex-1 min-w-[160px]">Description</div>
+                <div className="w-16 text-right shrink-0">Qty</div>
+                <div className="w-32 text-right shrink-0">Unit Price ({currencySymbol})</div>
+                <div className="w-36 text-right shrink-0">Total ({currencySymbol})</div>
+                <div className="w-8 shrink-0" />
+              </div>
 
-          {/* Line Items Rows */}
-          <div className="divide-y divide-slate-100 dark:divide-slate-800">
-            {fields.map((field, index) => {
-              const itemQty = items[index]?.quantity || 0;
-              const itemPrice = items[index]?.unitPrice || 0;
-              const itemTotal = (Number(itemQty) || 0) * (Number(itemPrice) || 0);
-              const productId = items[index]?.productId;
-              const matchedProduct = productId
-                ? products.find((p) => p.id === productId)
-                : undefined;
-              const isProduct = matchedProduct?.type === 'product';
-              const stock = matchedProduct?.stock ?? 0;
-              const threshold = matchedProduct?.lowStockThreshold ?? 5;
-              const isOverStock = isProduct && (Number(itemQty) || 0) > stock;
-              const isOutOfStock = isProduct && stock === 0;
-              const isLowStock = isProduct && stock > 0 && stock <= threshold;
+              {/* Line Items Rows */}
+              <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                {fields.map((field, index) => {
+                  const itemQty = items[index]?.quantity || 0;
+                  const itemPrice = items[index]?.unitPrice || 0;
+                  const itemTotal = (Number(itemQty) || 0) * (Number(itemPrice) || 0);
+                  const productId = items[index]?.productId;
+                  const matchedProduct = productId
+                    ? products.find((p) => p.id === productId)
+                    : undefined;
+                  const isProduct = matchedProduct?.type === 'product';
+                  const stock = matchedProduct?.stock ?? 0;
+                  const threshold = matchedProduct?.lowStockThreshold ?? 5;
+                  const isOverStock = isProduct && (Number(itemQty) || 0) > stock;
+                  const isOutOfStock = isProduct && stock === 0;
+                  const isLowStock = isProduct && stock > 0 && stock <= threshold;
 
-              return (
-                <div key={field.id} className="py-2.5">
-                  <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
-                    {/* Index (Desktop) */}
-                    <div className="hidden md:flex col-span-1 justify-center font-mono text-xs text-slate-400">
-                      {index + 1}
-                    </div>
-
-                    {/* Description */}
-                    <div className="col-span-1 md:col-span-5 space-y-1">
-                      <div className="flex items-center gap-1.5">
-                        <div className="flex-1">
-                          <Input
-                            placeholder="Product or service description..."
-                            {...register(`items.${index}.description` as const)}
-                            error={errors.items?.[index]?.description?.message}
-                          />
+                  return (
+                    <div key={field.id} className="py-2.5 animate-in fade-in slide-in-from-top-2 duration-200">
+                      <div className="flex items-center gap-2.5">
+                        {/* Index */}
+                        <div className="w-6 text-center font-mono text-xs text-slate-400 shrink-0">
+                          {index + 1}
                         </div>
-                        {matchedProduct ? (
-                          <div className="flex items-center gap-1 shrink-0">
-                            <button
-                              type="button"
-                              onClick={() => setCatalogPickerRow(index)}
-                              title="Linked to catalog (Click to change)"
-                              className="p-2 rounded-xl bg-orange-50 dark:bg-orange-950/40 text-[#FF7916] transition-colors"
-                            >
-                              <Package className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setValue(`items.${index}.productId`, undefined, { shouldDirty: true });
-                              }}
-                              title="Unlink from catalog"
-                              className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 transition-colors"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => setCatalogPickerRow(index)}
-                            title="Select from catalog (Optional)"
-                            className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-[#FF7916] text-slate-400 hover:text-[#FF7916] transition-colors shrink-0"
-                          >
-                            <Package className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </div>
 
-                      {/* Stock Info */}
-                      {isProduct && (
-                        <div className="flex items-center gap-2 pl-0.5 pt-0.5 text-[10px]">
-                          {isOutOfStock ? (
-                            <span className="text-rose-500 font-medium">⚠️ Out of stock (0 on hand)</span>
-                          ) : isLowStock ? (
-                            <span className="text-amber-500 font-medium">⚠️ Low stock: {stock} on hand</span>
-                          ) : (
-                            <span className="text-emerald-500 font-medium">✓ In stock: {stock} on hand</span>
+                        {/* Description */}
+                        <div className="flex-1 min-w-[160px] space-y-1">
+                          <div className="flex items-center gap-1.5">
+                            <div className="flex-1">
+                              <Input
+                                placeholder="Product or service description..."
+                                {...register(`items.${index}.description` as const)}
+                                error={errors.items?.[index]?.description?.message}
+                              />
+                            </div>
+                            {matchedProduct ? (
+                              <div className="flex items-center gap-1 shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={() => setCatalogPickerRow(index)}
+                                  title="Linked to catalog (Click to change)"
+                                  className="p-2 rounded-xl bg-orange-50 dark:bg-orange-950/40 text-[#FF7916] transition-colors"
+                                >
+                                  <Package className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setValue(`items.${index}.productId`, undefined, { shouldDirty: true });
+                                  }}
+                                  title="Unlink from catalog"
+                                  className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 transition-colors"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setCatalogPickerRow(index)}
+                                title="Select from catalog (Optional)"
+                                className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-[#FF7916] text-slate-400 hover:text-[#FF7916] transition-colors shrink-0"
+                              >
+                                <Package className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Stock Info */}
+                          {isProduct && (
+                            <div className="flex items-center gap-2 pl-0.5 pt-0.5 text-[10px]">
+                              {isOutOfStock ? (
+                                <span className="text-rose-500 font-medium">⚠️ Out of stock (0 on hand)</span>
+                              ) : isLowStock ? (
+                                <span className="text-amber-500 font-medium">⚠️ Low stock: {stock} on hand</span>
+                              ) : (
+                                <span className="text-emerald-500 font-medium">✓ In stock: {stock} on hand</span>
+                              )}
+                            </div>
                           )}
                         </div>
-                      )}
-                    </div>
 
-                    {/* Quantity */}
-                    <div className="col-span-1 md:col-span-2">
-                      <Input
-                        type="number"
-                        min="1"
-                        step="1"
-                        {...register(`items.${index}.quantity` as const)}
-                        error={errors.items?.[index]?.quantity?.message}
-                        className="text-right font-mono"
-                      />
-                      {isOverStock && (
-                        <span className="text-[10px] font-bold text-amber-500 block text-right mt-0.5">
-                          Exceeds stock ({stock})
-                        </span>
-                      )}
-                    </div>
+                        {/* Quantity */}
+                        <div className="w-16 shrink-0">
+                          <Input
+                            type="number"
+                            min="1"
+                            step="1"
+                            {...register(`items.${index}.quantity` as const)}
+                            error={errors.items?.[index]?.quantity?.message}
+                            className="text-right font-mono px-2"
+                          />
+                          {isOverStock && (
+                            <span className="text-[10px] font-bold text-amber-500 block text-right mt-0.5 truncate" title={`Exceeds stock (${stock})`}>
+                              Exceeds ({stock})
+                            </span>
+                          )}
+                        </div>
 
-                    {/* Unit Price */}
-                    <div className="col-span-1 md:col-span-2">
-                      <Input
-                        type="number"
-                        min="0"
-                        step="any"
-                        {...register(`items.${index}.unitPrice` as const)}
-                        error={errors.items?.[index]?.unitPrice?.message}
-                        className="text-right font-mono"
-                      />
-                    </div>
+                        {/* Unit Price */}
+                        <div className="w-32 shrink-0">
+                          <Input
+                            type="number"
+                            min="0"
+                            step="any"
+                            {...register(`items.${index}.unitPrice` as const)}
+                            error={errors.items?.[index]?.unitPrice?.message}
+                            className="text-right font-mono px-2"
+                          />
+                        </div>
 
-                    {/* Line Total & Delete */}
-                    <div className="col-span-1 md:col-span-2 flex items-center justify-between md:justify-end gap-3">
-                      <span className="md:hidden text-xs text-slate-500">Amount:</span>
-                      <span className="font-mono font-bold text-slate-900 dark:text-white text-sm">
-                        {formatCurrency(itemTotal, currency)}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => remove(index)}
-                        disabled={fields.length === 1}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 disabled:opacity-20 transition-colors shrink-0"
-                        title="Delete item"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                        {/* Line Total */}
+                        <div className="w-36 shrink-0 text-right">
+                          <span className="font-mono font-bold text-slate-900 dark:text-white text-xs sm:text-sm whitespace-nowrap block truncate" title={formatCurrency(itemTotal, currency)}>
+                            {formatCurrency(itemTotal, currency)}
+                          </span>
+                        </div>
+
+                        {/* Delete Button */}
+                        <div className="w-8 shrink-0 flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() => remove(index)}
+                            disabled={fields.length === 1}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 disabled:opacity-20 transition-colors shrink-0 cursor-pointer"
+                            title="Delete item"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              );
-            })}
+                  );
+                })}
+              </div>
+            </div>
           </div>
 
           {/* Action Row: Add Item / Select from Catalog */}
@@ -801,7 +809,10 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form }) => {
                   </span>
                   <span className="text-[10px] text-slate-400 font-mono">{currency}</span>
                 </div>
-                <span className="text-xl sm:text-2xl font-extrabold font-mono text-[#FF7916] tracking-tight">
+                <span
+                  key={totals.total}
+                  className="text-xl sm:text-2xl font-extrabold font-mono text-[#FF7916] tracking-tight inline-block animate-in fade-in-50 zoom-in-95 duration-200"
+                >
                   {formatCurrency(totals.total, currency)}
                 </span>
               </div>

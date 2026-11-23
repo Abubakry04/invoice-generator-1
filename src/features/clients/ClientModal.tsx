@@ -4,6 +4,7 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Textarea } from '../../components/ui/Textarea';
 import { Client } from '../../types';
+import { Users } from 'lucide-react';
 
 interface ClientModalProps {
   isOpen: boolean;
@@ -68,8 +69,10 @@ export const ClientModal: React.FC<ClientModalProps> = ({ isOpen, onClose, onSav
     <Modal
       isOpen={isOpen}
       onClose={onClose}
+      icon={<Users className="w-5 h-5 text-[#FF7916]" />}
       title={client ? 'Edit Client' : 'Add New Client'}
-      description="Save client contact details to quickly populate new invoices."
+      description="Save customer billing and contact details for instant invoice auto-fill."
+      maxWidth="lg"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input

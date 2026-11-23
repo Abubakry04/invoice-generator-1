@@ -31,15 +31,15 @@ export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/80 backdrop-blur-xs">
-      <div className="bg-white dark:bg-slate-900 w-full max-w-xl rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-950/70 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-slate-900 w-full max-w-xl rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.35),0_0_0_1px_rgba(255,255,255,0.06)] overflow-hidden animate-in fade-in-0 zoom-in-95 duration-200 ease-out">
         {/* Modal Controls Header */}
-        <div className="flex items-center justify-between px-6 py-3.5 border-b border-slate-100 dark:border-slate-800 print:hidden">
+        <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-slate-100 dark:border-slate-800 print:hidden">
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold text-slate-800 dark:text-white uppercase tracking-wider">
               Payment Receipt
             </span>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 font-bold">
+            <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-200 dark:border-emerald-900/60">
               {payment.receiptNumber || 'OFFICIAL RECEIPT'}
             </span>
           </div>
@@ -51,14 +51,14 @@ export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({
               size="sm"
               onClick={handlePrint}
               icon={<Printer className="w-3.5 h-3.5" />}
-              className="text-xs"
+              className="text-xs font-semibold"
             >
               Print Receipt
             </Button>
             <button
               type="button"
               onClick={onClose}
-              className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              className="p-2 rounded-2xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 active:scale-95 transition-all cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>

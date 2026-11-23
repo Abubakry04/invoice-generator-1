@@ -1,16 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import {
   CreditCard,
-  X,
   Calendar,
   Hash,
-  FileText,
   CheckCircle2,
-  AlertCircle,
-  Building2,
-  DollarSign,
   Printer,
-  Receipt,
 } from 'lucide-react';
 import { Invoice, PaymentMethod, PaymentRecord } from '../../types';
 import { useInvoiceStore } from '../../store/invoiceStore';
@@ -22,6 +16,7 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { Textarea } from '../../components/ui/Textarea';
+import { Modal } from '../../components/ui/Modal';
 import { PaymentReceiptModal } from './PaymentReceiptModal';
 
 interface RecordPaymentModalProps {
@@ -129,34 +124,17 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/80 backdrop-blur-xs">
-      <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-slate-100 dark:border-slate-800">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-              <CreditCard className="w-4 h-4" />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                Record Payment
-              </h3>
-              <p className="text-[11px] text-slate-400">
-                {invoice.number} • {invoice.client.name}
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={handleModalClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
+    <>
+      <Modal
+        isOpen={isOpen}
+        onClose={handleModalClose}
+        icon={<CreditCard className="w-5 h-5 text-emerald-500" />}
+        title="Record Payment"
+        description={`${invoice.number} • ${invoice.client.name}`}
+        maxWidth="lg"
+      >
         {recordedPayment ? (
-          <div className="p-8 text-center space-y-4">
+          <div className="p-4 sm:p-6 text-center space-y-4">
             <div className="w-14 h-14 rounded-2xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto shadow-xs">
               <CheckCircle2 className="w-8 h-8" />
             </div>
@@ -205,27 +183,28 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
               <Button
                 type="button"
                 variant="outline"
-                size="md"
+                size="sm"
                 onClick={() => setShowReceiptModal(true)}
                 icon={<Printer className="w-4 h-4" />}
+                className="text-xs font-semibold"
               >
                 Print / View Receipt
               </Button>
               <Button
                 type="button"
                 variant="primary"
-                size="md"
+                size="sm"
                 onClick={handleModalClose}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs"
               >
                 Done
               </Button>
             </div>
           </div>
         ) : (
-          <>
+          <div className="space-y-4">
             {/* Balance Overview Card */}
-            <div className="p-3.5 sm:p-5 bg-slate-50 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800 grid grid-cols-3 gap-2 text-center">
+            <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800 grid grid-cols-3 gap-2 text-center">
               <div>
                 <span className="text-[10px] uppercase font-semibold text-slate-400 block truncate">
                   Total
@@ -255,25 +234,25 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
             </div>
 
             {/* Form Body */}
-            <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
               {/* Amount input & Quick preset buttons */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                     Amount ({getCurrencySymbol(invoice.currency)})
                   </label>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1.5">
                     <button
                       type="button"
                       onClick={() => handleQuickPercent(50)}
-                      className="text-[10px] px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 cursor-pointer font-medium"
+                      className="text-[10px] px-2.5 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 cursor-pointer font-medium transition-colors"
                     >
                       50% Deposit
                     </button>
                     <button
                       type="button"
                       onClick={() => handleQuickPercent(100)}
-                      className="text-[10px] px-2 py-0.5 rounded bg-orange-50 dark:bg-orange-950/60 text-[#FF7916] font-bold hover:bg-orange-100 cursor-pointer"
+                      className="text-[10px] px-2.5 py-0.5 rounded-lg bg-orange-50 dark:bg-orange-950/60 text-[#FF7916] font-bold hover:bg-orange-100 dark:hover:bg-orange-900/40 cursor-pointer transition-colors"
                     >
                       Full Balance
                     </button>
@@ -329,7 +308,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
 
               {/* Action buttons */}
               <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
-                <Button type="button" variant="outline" size="sm" onClick={handleModalClose}>
+                <Button type="button" variant="outline" size="sm" onClick={handleModalClose} className="text-xs font-semibold">
                   Cancel
                 </Button>
                 <Button
@@ -337,16 +316,16 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
                   variant="primary"
                   size="sm"
                   disabled={isSubmitting || amount <= 0}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 cursor-pointer"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 cursor-pointer shadow-xs"
                   icon={<CheckCircle2 className="w-4 h-4" />}
                 >
                   {isSubmitting ? 'Recording...' : 'Record Payment'}
                 </Button>
               </div>
             </form>
-          </>
+          </div>
         )}
-      </div>
+      </Modal>
 
       {/* Official Printable Receipt Modal */}
       <PaymentReceiptModal
@@ -355,7 +334,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
         isOpen={showReceiptModal}
         onClose={() => setShowReceiptModal(false)}
       />
-    </div>
+    </>
   );
 };
 
