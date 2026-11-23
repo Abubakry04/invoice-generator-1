@@ -43,23 +43,25 @@ interface RecurringState {
   checkAndRunDueSchedules: () => { generatedCount: number; invoices: Invoice[] };
 }
 
-const INITIAL_SCHEDULES: RecurringSchedule[] = [
-  {
-    id: 'rec-sample-01',
-    businessId: 'biz-default-01',
-    invoiceId: 'inv-0001',
-    clientName: 'PayWave Fintech Ltd',
-    frequency: 'monthly',
-    startDate: '2026-09-01',
-    nextRunDate: '2026-11-15',
-    status: 'active',
-    totalGeneratedCount: 2,
-    autoSend: true,
-    lastGeneratedAt: '2026-10-15T09:00:00.000Z',
-    createdAt: '2026-09-01T08:00:00.000Z',
-    updatedAt: '2026-10-15T09:00:00.000Z',
-  },
-];
+// Purge any legacy sample recurring schedules from browser localStorage
+if (typeof window !== 'undefined') {
+  try {
+    const raw = localStorage.getItem('egolepay-recurring');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed?.state?.schedules)) {
+        parsed.state.schedules = parsed.state.schedules.filter(
+          (s: any) => s.id !== 'rec-sample-01'
+        );
+        localStorage.setItem('egolepay-recurring', JSON.stringify(parsed));
+      }
+    }
+  } catch {
+    // Ignore storage parse errors
+  }
+}
+
+const INITIAL_SCHEDULES: RecurringSchedule[] = [];
 
 export const useRecurringStore = create<RecurringState>()(
   persist(

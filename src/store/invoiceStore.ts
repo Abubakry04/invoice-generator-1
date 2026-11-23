@@ -1,12 +1,29 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Invoice, InvoiceStatus, LineItem, InvoiceTotals, PaymentRecord } from '../types';
-import { SAMPLE_INVOICES } from './sampleData';
 import { generateInvoiceNumber } from '../lib/generateInvoiceNumber';
 import { getTodayDateString, getDefaultDueDate } from '../lib/dates';
 import { calculateTotals } from '../lib/calculateTotals';
 import { useBusinessStore } from './businessStore';
 import { useSubscriptionStore } from './subscriptionStore';
+
+// Purge any legacy sample invoices from browser localStorage
+if (typeof window !== 'undefined') {
+  try {
+    const raw = localStorage.getItem('egolepay-invoices');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed?.state?.invoices)) {
+        parsed.state.invoices = parsed.state.invoices.filter(
+          (inv: any) => !['inv-0001', 'inv-0002', 'inv-0003'].includes(inv.id)
+        );
+        localStorage.setItem('egolepay-invoices', JSON.stringify(parsed));
+      }
+    }
+  } catch {
+    // Ignore storage parse errors
+  }
+}
 
 interface InvoiceFilterOptions {
   status?: InvoiceStatus | 'all';
@@ -48,16 +65,7 @@ interface InvoiceState {
   clearInvoices: () => void;
 }
 
-const INITIAL_INVOICES: Invoice[] = SAMPLE_INVOICES.map((inv) => {
-  const totals = calculateTotals(inv.items, inv.discount, inv.taxRate);
-  const isPaid = inv.status === 'paid';
-  return {
-    ...inv,
-    businessId: 'biz-default-01',
-    paidAmount: isPaid ? totals.total : 0,
-    outstandingAmount: isPaid ? 0 : totals.total,
-  };
-});
+const INITIAL_INVOICES: Invoice[] = [];
 
 export const useInvoiceStore = create<InvoiceState>()(
   persist(
