@@ -31,6 +31,7 @@ interface CustomerState {
   getCustomer: (id: string) => Customer | undefined;
   getCustomersByBusiness: (businessId?: string) => Customer[];
   searchCustomers: (query: string, businessId?: string) => Customer[];
+  setCustomers: (customers: Customer[]) => void;
   resetCustomers: () => void;
   clearCustomers: () => void;
 }
@@ -88,6 +89,8 @@ export const useCustomerStore = create<CustomerState>()(
           );
         });
       },
+
+      setCustomers: (customers: Customer[]) => set({ customers }),
 
       resetCustomers: () => set({ customers: INITIAL_CUSTOMERS }),
 

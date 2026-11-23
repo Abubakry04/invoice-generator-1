@@ -61,6 +61,7 @@ interface InvoiceState {
   getNextInvoiceNumber: (prefix?: string) => string;
 
   // Reset & Maintenance
+  setInvoices: (invoices: Invoice[]) => void;
   resetInvoices: () => void;
   clearInvoices: () => void;
 }
@@ -369,6 +370,8 @@ export const useInvoiceStore = create<InvoiceState>()(
           return true;
         });
       },
+
+      setInvoices: (invoices: Invoice[]) => set({ invoices }),
 
       resetInvoices: () => set({ invoices: INITIAL_INVOICES }),
 

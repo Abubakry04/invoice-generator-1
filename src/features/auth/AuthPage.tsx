@@ -29,7 +29,8 @@ export const AuthPage: React.FC = () => {
   const toast = useToast();
   const { login, register } = useAuthStore();
 
-  const destination = (location.state as any)?.from?.pathname || '/';
+  const rawTarget = (location.state as any)?.from?.pathname;
+  const destination = rawTarget && rawTarget !== '/login' && rawTarget !== '/register' ? rawTarget : '/';
 
   // Form fields
   const [name, setName] = useState('');
@@ -63,7 +64,7 @@ export const AuthPage: React.FC = () => {
           password,
         });
 
-        toast.success(`Welcome to EgolePay, ${name.trim()}! Your workspace has been initialized.`);
+        toast.success(`Welcome, ${name.trim()}! Your workspace has been initialized.`);
       } else {
         if (!email.trim()) {
           toast.error('Please enter your email address.');
@@ -92,9 +93,9 @@ export const AuthPage: React.FC = () => {
           <div>
             <div className="flex items-center gap-3 mb-10">
               <img src={logoImg} alt="EgolePay" className="h-9 w-auto object-contain brightness-110" />
-              <span className="text-xs px-2 py-0.5 rounded-md font-bold uppercase tracking-wider bg-[#FF7916] text-white">
+              {/* <span className="text-xs px-2 py-0.5 rounded-md font-bold uppercase tracking-wider bg-[#FF7916] text-white">
                 SaaS
-              </span>
+              </span> */}
             </div>
 
             <h2 className="text-2xl font-extrabold tracking-tight text-white leading-snug">
@@ -148,17 +149,6 @@ export const AuthPage: React.FC = () => {
           <div className="flex p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl mb-8">
             <button
               type="button"
-              onClick={() => handleToggleMode('login')}
-              className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${
-                mode === 'login'
-                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
-                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              Sign In
-            </button>
-            <button
-              type="button"
               onClick={() => handleToggleMode('register')}
               className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${
                 mode === 'register'
@@ -167,6 +157,17 @@ export const AuthPage: React.FC = () => {
               }`}
             >
               Create Account
+            </button>
+            <button
+              type="button"
+              onClick={() => handleToggleMode('login')}
+              className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${
+                mode === 'login'
+                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
+                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Sign In
             </button>
           </div>
 
@@ -178,7 +179,7 @@ export const AuthPage: React.FC = () => {
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
               {mode === 'register'
                 ? 'Create your free EgolePay account and start sending invoices today.'
-                : 'Enter your credentials to access your billing dashboard.'}
+                : 'Enter your email and any password to access your workspace.'}
             </p>
           </div>
 

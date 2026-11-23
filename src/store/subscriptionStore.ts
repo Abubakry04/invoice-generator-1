@@ -123,6 +123,7 @@ interface SubscriptionStoreState {
   getRequiredPlanForTemplate: (template: InvoiceTemplate) => SubscriptionPlanId;
   recordInvoiceCreation: () => void;
   upgradePlan: (planId: SubscriptionPlanId) => void;
+  setSubscription: (subscription: SubscriptionState) => void;
   resetMonthlyUsage: () => void;
 }
 
@@ -134,7 +135,7 @@ export const useSubscriptionStore = create<SubscriptionStoreState>()(
         status: 'active',
         currentPeriodStart: new Date(Date.now() - 10 * 86400000).toISOString(),
         currentPeriodEnd: new Date(Date.now() + 20 * 86400000).toISOString(),
-        invoicesCreatedThisMonth: 3,
+        invoicesCreatedThisMonth: 0,
       },
 
       getCurrentPlan: () => {
@@ -193,6 +194,10 @@ export const useSubscriptionStore = create<SubscriptionStoreState>()(
             currentPeriodEnd: new Date(Date.now() + 30 * 86400000).toISOString(),
           },
         }));
+      },
+
+      setSubscription: (subscription) => {
+        set({ subscription });
       },
 
       resetMonthlyUsage: () => {

@@ -339,7 +339,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form }) => {
               )}
               <div className="min-w-0">
                 <h3 className="font-bold text-slate-900 dark:text-white text-base truncate">
-                  {business.name || 'EgolePay LTD'}
+                  {business.name || 'Your Company Name'}
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                   {business.email || 'billing@domain.com'}
@@ -375,7 +375,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form }) => {
                   <Input
                     label="Company Name"
                     {...register('business.name')}
-                    placeholder="EgolePay LTD"
+                    placeholder="Your Company Name"
                   />
                   <Input
                     label="Business Email"

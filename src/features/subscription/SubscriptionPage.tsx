@@ -86,7 +86,7 @@ export const SubscriptionPage: React.FC = () => {
 
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             {/* Quick Switch Pills */}
-            <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+            {/* <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
               <span className="text-[10px] font-semibold text-slate-400 px-1.5">Switch Tier:</span>
               {(['free', 'starter', 'business'] as SubscriptionPlanId[]).map((pid) => (
                 <button
@@ -104,16 +104,16 @@ export const SubscriptionPage: React.FC = () => {
                   {pid}
                 </button>
               ))}
-            </div>
+            </div> */}
 
-            <Button
+            {/* <Button
               onClick={() => openModal('upgrade', { trigger: 'Manage your plan & limits' })}
               className="bg-[#FF7916] hover:bg-[#ea580c] active:bg-[#c2410c] text-white font-semibold shadow-xs"
               icon={<Zap className="w-4 h-4 fill-current" />}
             >
               <span className="hidden sm:inline">Checkout Preview</span>
               <span className="sm:hidden">Upgrade</span>
-            </Button>
+            </Button> */}
           </div>
         </div>
 

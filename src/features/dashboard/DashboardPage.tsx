@@ -151,7 +151,7 @@ export const DashboardPage: React.FC = () => {
             </span>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            {settings.business.name || 'EgolePay Hub'} • Financial summary & invoice overview
+            {settings.business.name || 'Workspace'} • Financial summary & invoice overview
           </p>
         </div>
 
