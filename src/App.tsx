@@ -25,11 +25,11 @@ export const App: React.FC = () => {
       <BrowserRouter>
         <Routes>
           {/* Public Authentication & Registration Routes */}
-          <Route path="login" element={<AuthPage />} />
-          <Route path="register" element={<AuthPage />} />
+          <Route path="/login" element={<AuthPage />} />
+          <Route path="/register" element={<AuthPage />} />
 
           {/* Public Client Hosted Invoice & Online Payment Route */}
-          <Route path="pay/:id" element={<PublicInvoicePayPage />} />
+          <Route path="/pay/:id" element={<PublicInvoicePayPage />} />
 
           {/* SaaS Authenticated Workspace Layout */}
           <Route

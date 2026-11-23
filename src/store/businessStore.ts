@@ -35,29 +35,28 @@ const DEFAULT_BUSINESS: BusinessProfile = {
   createdAt: '2026-01-01T00:00:00.000Z',
 };
 
-const SECONDARY_BUSINESS: BusinessProfile = {
-  id: 'biz-demo-02',
-  name: 'Studio Apex Creative Ltd',
-  email: 'billing@studioapex.design',
-  phone: '+234 802 334 5566',
-  address: '14 Admiralty Way, Lekki Phase 1, Lagos',
-  website: 'https://studioapex.design',
-  taxId: 'TIN-11223344-0002',
-  bankDetails:
-    'Access Bank PLC\nAccount Name: Studio Apex Creative Ltd\nAccount No: 0987654321',
-  defaultCurrency: 'USD',
-  defaultTaxRate: 5.0,
-  defaultPaymentTermsDays: 30,
-  invoicePrefix: 'APX-',
-  accentColor: '#2563eb',
-  defaultTemplate: 'minimal',
-  createdAt: '2026-02-01T00:00:00.000Z',
-};
+// Purge any legacy demo secondary businesses from browser localStorage
+if (typeof window !== 'undefined') {
+  try {
+    const raw = localStorage.getItem('egolepay-business');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed?.state?.businesses)) {
+        parsed.state.businesses = parsed.state.businesses.filter(
+          (b: any) => b.id !== 'biz-demo-02'
+        );
+        localStorage.setItem('egolepay-business', JSON.stringify(parsed));
+      }
+    }
+  } catch {
+    // Ignore storage parse errors
+  }
+}
 
 export const useBusinessStore = create<BusinessState>()(
   persist(
     (set, get) => ({
-      businesses: [DEFAULT_BUSINESS, SECONDARY_BUSINESS],
+      businesses: [DEFAULT_BUSINESS],
       activeBusinessId: DEFAULT_BUSINESS.id,
 
       getActiveBusiness: () => {
@@ -96,7 +95,7 @@ export const useBusinessStore = create<BusinessState>()(
 
       resetToDefault: () => {
         set({
-          businesses: [DEFAULT_BUSINESS, SECONDARY_BUSINESS],
+          businesses: [DEFAULT_BUSINESS],
           activeBusinessId: DEFAULT_BUSINESS.id,
         });
       },

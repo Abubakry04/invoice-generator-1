@@ -1,8 +1,25 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { ProductItem } from '../types';
-import { SAMPLE_PRODUCTS } from './sampleData';
 import { useBusinessStore } from './businessStore';
+
+// Purge any legacy sample products from browser localStorage
+if (typeof window !== 'undefined') {
+  try {
+    const raw = localStorage.getItem('egolepay-products');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed?.state?.products)) {
+        parsed.state.products = parsed.state.products.filter(
+          (p: any) => !['prod-001', 'prod-002', 'prod-003', 'prod-004', 'prod-005'].includes(p.id)
+        );
+        localStorage.setItem('egolepay-products', JSON.stringify(parsed));
+      }
+    }
+  } catch {
+    // Ignore storage parse errors
+  }
+}
 
 interface ProductState {
   products: ProductItem[];
@@ -21,11 +38,7 @@ interface ProductState {
   clearProducts: () => void;
 }
 
-const INITIAL_PRODUCTS: ProductItem[] = SAMPLE_PRODUCTS.map((p) => ({
-  ...p,
-  businessId: 'biz-default-01',
-  taxRate: 7.5,
-}));
+const INITIAL_PRODUCTS: ProductItem[] = [];
 
 export const useProductStore = create<ProductState>()(
   persist(

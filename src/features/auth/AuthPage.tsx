@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useSearchParams, useLocation, Link } from 'react-router-dom';
 import {
   Building2,
@@ -27,16 +27,9 @@ export const AuthPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const toast = useToast();
-  const { login, register, isAuthenticated } = useAuthStore();
+  const { login, register } = useAuthStore();
 
   const destination = (location.state as any)?.from?.pathname || '/';
-
-  // If already authenticated, redirect to destination or dashboard
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate(destination, { replace: true });
-    }
-  }, [isAuthenticated, navigate, destination]);
 
   // Form fields
   const [name, setName] = useState('');
@@ -85,16 +78,6 @@ export const AuthPage: React.FC = () => {
       setIsLoading(false);
       navigate(destination, { replace: true });
     }, 600);
-  };
-
-  const handleQuickDemoLogin = (demoEmail: string, demoName: string) => {
-    setIsLoading(true);
-    setTimeout(() => {
-      login(demoEmail);
-      setIsLoading(false);
-      toast.success(`Signed in as ${demoName}`);
-      navigate(destination, { replace: true });
-    }, 300);
   };
 
   return (
@@ -212,7 +195,7 @@ export const AuthPage: React.FC = () => {
                       type="text"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      placeholder="e.g. Alex Morgan"
+                      placeholder="e.g. Jane Doe"
                       required
                       className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white pl-9 focus:outline-none focus:ring-1 focus:ring-[#FF7916]"
                     />
@@ -312,42 +295,6 @@ export const AuthPage: React.FC = () => {
               )}
             </button>
           </form>
-
-          {/* Quick Demo Sign-Ins */}
-          <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2.5">
-              Instant Demo Access
-            </span>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              <button
-                type="button"
-                onClick={() => handleQuickDemoLogin('alex@egolepay.io', 'Alex Morgan (Pro)')}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-left text-xs transition-colors"
-              >
-                <div className="w-6 h-6 rounded-lg bg-orange-100 dark:bg-orange-950/80 text-[#FF7916] flex items-center justify-center font-bold text-[10px]">
-                  P
-                </div>
-                <div className="truncate min-w-0">
-                  <p className="font-bold text-slate-800 dark:text-slate-200 truncate">Alex Morgan</p>
-                  <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Pro Plan Account</p>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickDemoLogin('sarah@freelance.dev', 'Sarah Jenkins (Starter)')}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-left text-xs transition-colors"
-              >
-                <div className="w-6 h-6 rounded-lg bg-blue-100 dark:bg-blue-950/80 text-blue-600 flex items-center justify-center font-bold text-[10px]">
-                  S
-                </div>
-                <div className="truncate min-w-0">
-                  <p className="font-bold text-slate-800 dark:text-slate-200 truncate">Sarah Jenkins</p>
-                  <p className="text-[10px] text-slate-500 font-medium">Starter Plan</p>
-                </div>
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </div>

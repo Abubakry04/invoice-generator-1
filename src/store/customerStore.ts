@@ -1,8 +1,25 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Customer } from '../types';
-import { SAMPLE_CLIENTS } from './sampleData';
 import { useBusinessStore } from './businessStore';
+
+// Purge any legacy sample customers from browser localStorage
+if (typeof window !== 'undefined') {
+  try {
+    const raw = localStorage.getItem('egolepay-customers');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed?.state?.customers)) {
+        parsed.state.customers = parsed.state.customers.filter(
+          (c: any) => !['client-001', 'client-002', 'client-003'].includes(c.id)
+        );
+        localStorage.setItem('egolepay-customers', JSON.stringify(parsed));
+      }
+    }
+  } catch {
+    // Ignore storage parse errors
+  }
+}
 
 interface CustomerState {
   customers: Customer[];
@@ -18,11 +35,7 @@ interface CustomerState {
   clearCustomers: () => void;
 }
 
-const INITIAL_CUSTOMERS: Customer[] = SAMPLE_CLIENTS.map((c) => ({
-  ...c,
-  businessId: 'biz-default-01',
-  notes: 'Key enterprise account with recurring billing cycle.',
-}));
+const INITIAL_CUSTOMERS: Customer[] = [];
 
 export const useCustomerStore = create<CustomerState>()(
   persist(
