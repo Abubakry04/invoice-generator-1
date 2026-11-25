@@ -149,6 +149,10 @@ export interface Invoice {
   accentColor?: string;
   publicPaymentToken?: string;
   paymentLink?: string;
+  sentAt?: string;
+  viewedAt?: string;
+  paidAt?: string;
+  lastRemindedAt?: string;
   createdAt?: string;
   updatedAt?: string;
 }

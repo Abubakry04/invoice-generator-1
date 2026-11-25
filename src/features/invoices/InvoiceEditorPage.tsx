@@ -15,6 +15,7 @@ import {
   MoreHorizontal,
   Download,
   Printer,
+  Check,
 } from 'lucide-react';
 import { invoiceFormSchema, InvoiceFormData } from './invoiceSchema';
 import { InvoiceForm } from './InvoiceForm';
@@ -189,13 +190,43 @@ export const InvoiceEditorPage: React.FC = () => {
     mode: 'onTouched',
   });
 
-  const { handleSubmit, watch, reset, setValue } = form;
+  const {
+    handleSubmit,
+    watch,
+    reset,
+    setValue,
+    formState: { isDirty },
+  } = form;
 
   useEffect(() => {
     if (existingInvoice) {
       reset(defaultValues);
     }
   }, [existingInvoice?.id]);
+
+  // Global power-user keyboard shortcuts (Cmd+S, Cmd+P, Cmd+Enter)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (showPreviewModal || sendModalInvoice) return;
+
+      const isMod = e.metaKey || e.ctrlKey;
+      if (!isMod) return;
+
+      if (e.key === 's' || e.key === 'S') {
+        e.preventDefault();
+        handleSubmit(handleSaveDraft)();
+      } else if (e.key === 'p' || e.key === 'P') {
+        e.preventDefault();
+        setShowPreviewModal((prev) => !prev);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        handleSubmit(handleSaveAndSend)();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showPreviewModal, sendModalInvoice, handleSubmit]);
 
   // Watch current live values to stream to preview and PDF
   const formValues = watch();
@@ -347,6 +378,17 @@ export const InvoiceEditorPage: React.FC = () => {
               {isEditing ? existingInvoice?.number || 'Edit Invoice' : 'New Invoice'}
             </h1>
             <StatusBadge status={liveInvoice.status} size="sm" />
+
+            {/* Subtle Save State Indicator */}
+            {isDirty ? (
+              <span className="hidden md:inline-flex text-[11px] font-medium text-slate-400 dark:text-slate-500">
+                • Unsaved changes
+              </span>
+            ) : (
+              <span className="hidden md:inline-flex text-[11px] font-medium text-emerald-600/80 dark:text-emerald-400/80">
+                • Saved
+              </span>
+            )}
           </div>
         </div>
 
@@ -360,6 +402,7 @@ export const InvoiceEditorPage: React.FC = () => {
             onClick={() => setShowPreviewModal(true)}
             icon={<Eye className="w-3.5 h-3.5 text-slate-500" />}
             className="text-xs font-semibold"
+            title="Preview Invoice (⌘P)"
           >
             <span className="hidden sm:inline">Preview</span>
           </Button>
@@ -379,17 +422,20 @@ export const InvoiceEditorPage: React.FC = () => {
             </Button>
 
             {showMoreMenu && (
-              <div className="absolute right-0 top-full mt-1.5 w-48 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xl p-1 z-30 animate-in fade-in-0 zoom-in-95 duration-150">
+              <div className="absolute right-0 top-full mt-1.5 w-48 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/90 dark:border-slate-800 shadow-lg p-1 z-30 animate-in fade-in-0 zoom-in-95 duration-100">
                 <button
                   type="button"
                   onClick={() => {
                     setShowMoreMenu(false);
                     handleSubmit(handleSaveDraft)();
                   }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer text-left"
+                  className="w-full flex items-center justify-between px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer text-left"
                 >
-                  <Save className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Save as Draft</span>
+                  <div className="flex items-center gap-2">
+                    <Save className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Save as Draft</span>
+                  </div>
+                  <span className="text-[10px] text-slate-400 font-mono">⌘S</span>
                 </button>
 
                 {isEditing && id && (
@@ -399,7 +445,7 @@ export const InvoiceEditorPage: React.FC = () => {
                       setShowMoreMenu(false);
                       if (!canUsePaymentPortal) {
                         openModal('upgrade', {
-                          targetPlan: 'starter',
+                           targetPlan: 'starter',
                           trigger: 'Client online payment links are available on Starter and Business plans.',
                         });
                         return;
@@ -408,7 +454,7 @@ export const InvoiceEditorPage: React.FC = () => {
                       navigator.clipboard.writeText(payUrl);
                       toast.success('Payment link copied to clipboard!');
                     }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer text-left"
+                    className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer text-left"
                   >
                     <LinkIcon className="w-3.5 h-3.5 text-blue-500" />
                     <span>Copy Payment Link</span>
@@ -421,7 +467,7 @@ export const InvoiceEditorPage: React.FC = () => {
                     setShowMoreMenu(false);
                     handleDownloadPdf();
                   }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer text-left"
+                  className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer text-left"
                 >
                   <Download className="w-3.5 h-3.5 text-slate-400" />
                   <span>Download PDF</span>
@@ -433,7 +479,7 @@ export const InvoiceEditorPage: React.FC = () => {
                     setShowMoreMenu(false);
                     window.print();
                   }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer text-left"
+                  className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer text-left"
                 >
                   <Printer className="w-3.5 h-3.5 text-slate-400" />
                   <span>Print Document</span>
@@ -449,8 +495,9 @@ export const InvoiceEditorPage: React.FC = () => {
             onClick={handleSubmit(handleSaveAndSend)}
             icon={<Send className="w-3.5 h-3.5" />}
             className="bg-[#FF7916] hover:bg-[#ea580c] active:bg-[#c2410c] text-white shadow-xs rounded-xl font-bold px-3.5 text-xs shrink-0"
+            title="Save & Send (⌘↵)"
           >
-            {isEditing ? 'Save & Send' : 'Save & Issue'}
+            <span>{isEditing ? 'Save & Send' : 'Save & Issue'}</span>
           </Button>
         </div>
       </div>

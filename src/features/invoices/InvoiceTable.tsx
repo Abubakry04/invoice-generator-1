@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Search,
   Eye,
@@ -22,11 +22,15 @@ import {
   Receipt,
   XCircle,
   X,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  BellRing,
 } from 'lucide-react';
 import { Invoice, InvoiceStatus } from '../../types';
 import { calculateTotals } from '../../lib/calculateTotals';
 import { formatCurrency } from '../../lib/formatCurrency';
-import { formatDate, getEffectiveStatus } from '../../lib/dates';
+import { formatDate, formatRelativeTime, getEffectiveStatus, getTodayDateString } from '../../lib/dates';
 import { exportInvoicesToCSV } from '../../lib/exportUtils';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { Input } from '../../components/ui/Input';
@@ -59,19 +63,53 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
   onStatusChange,
 }) => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const toast = useToast();
   const { hasFeature } = useSubscriptionStore();
   const { openModal } = useUiStore();
   const canUsePaymentPortal = hasFeature('payment_portal');
 
+  const urlStatus = searchParams.get('status') as FilterStatus | null;
+  const validStatuses: FilterStatus[] = ['all', 'draft', 'sent', 'paid', 'overdue', 'partially_paid', 'cancelled'];
+  const initialFilter: FilterStatus = urlStatus && validStatuses.includes(urlStatus) ? urlStatus : 'all';
+
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeFilter, setActiveFilter] = useState<FilterStatus>('all');
+  const [activeFilter, setActiveFilter] = useState<FilterStatus>(initialFilter);
+  const [dateFilter, setDateFilter] = useState<'all' | 'this_month' | 'last_30_days'>('all');
+  const [sortBy, setSortBy] = useState<'issueDate' | 'dueDate' | 'amount' | 'client'>('issueDate');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [selectedInvoiceForView, setSelectedInvoiceForView] = useState<Invoice | null>(null);
   const [viewModalTab, setViewModalTab] = useState<'document' | 'payments'>('document');
   const [deletingInvoiceId, setDeletingInvoiceId] = useState<string | null>(null);
   const [paymentModalInvoice, setPaymentModalInvoice] = useState<Invoice | null>(null);
   const [recurringModalInvoice, setRecurringModalInvoice] = useState<Invoice | null>(null);
   const [sendModalInvoice, setSendModalInvoice] = useState<Invoice | null>(null);
+  const [sendModalMode, setSendModalMode] = useState<'send' | 'reminder'>('send');
+
+  useEffect(() => {
+    if (urlStatus && validStatuses.includes(urlStatus) && urlStatus !== activeFilter) {
+      setActiveFilter(urlStatus);
+    }
+  }, [urlStatus]);
+
+  const handleSelectFilterTab = (tab: FilterStatus) => {
+    setActiveFilter(tab);
+    if (tab === 'all') {
+      searchParams.delete('status');
+    } else {
+      searchParams.set('status', tab);
+    }
+    setSearchParams(searchParams, { replace: true });
+  };
+
+  const handleSort = (field: 'issueDate' | 'dueDate' | 'amount' | 'client') => {
+    if (sortBy === field) {
+      setSortDir((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortBy(field);
+      setSortDir(field === 'client' ? 'asc' : 'desc');
+    }
+  };
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [menuCoords, setMenuCoords] = useState<{
     top: number;
@@ -142,13 +180,27 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
     setActiveMenuId(invoiceId);
   };
 
-  // Filter & Search
+  // Filter, Search & Sort
   const filteredInvoices = useMemo(() => {
-    return invoices.filter((inv) => {
+    const todayStr = getTodayDateString();
+    const currentMonthPrefix = todayStr.slice(0, 7);
+    const thirtyDaysAgoDate = new Date();
+    thirtyDaysAgoDate.setDate(thirtyDaysAgoDate.getDate() - 30);
+    const thirtyDaysAgoStr = thirtyDaysAgoDate.toISOString().slice(0, 10);
+
+    const filtered = invoices.filter((inv) => {
       const effStatus = getEffectiveStatus(inv);
 
       // Status filter
       if (activeFilter !== 'all' && effStatus !== activeFilter) {
+        return false;
+      }
+
+      // Date range quick filter
+      if (dateFilter === 'this_month' && !(inv.issueDate || '').startsWith(currentMonthPrefix)) {
+        return false;
+      }
+      if (dateFilter === 'last_30_days' && (inv.issueDate || '') < thirtyDaysAgoStr) {
         return false;
       }
 
@@ -163,7 +215,23 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
 
       return true;
     });
-  }, [invoices, activeFilter, searchQuery]);
+
+    return [...filtered].sort((a, b) => {
+      let cmp = 0;
+      if (sortBy === 'issueDate') {
+        cmp = (a.issueDate || '').localeCompare(b.issueDate || '');
+      } else if (sortBy === 'dueDate') {
+        cmp = (a.dueDate || '').localeCompare(b.dueDate || '');
+      } else if (sortBy === 'client') {
+        cmp = (a.client.name || '').localeCompare(b.client.name || '');
+      } else if (sortBy === 'amount') {
+        const totalA = calculateTotals(a.items, a.discount, a.taxRate).total;
+        const totalB = calculateTotals(b.items, b.discount, b.taxRate).total;
+        cmp = totalA - totalB;
+      }
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
+  }, [invoices, activeFilter, dateFilter, searchQuery, sortBy, sortDir]);
 
   // Counts for each tab
   const statusCounts = useMemo(() => {
@@ -206,6 +274,75 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
 
   const invoiceToDelete = invoices.find((inv) => inv.id === deletingInvoiceId);
 
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
+  const handleToggleSelect = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (filteredInvoices.length === 0) return;
+    const allFilteredIds = filteredInvoices.map((i) => i.id);
+    const areAllSelected = allFilteredIds.every((id) => selectedIds.includes(id));
+    if (areAllSelected) {
+      setSelectedIds((prev) => prev.filter((id) => !allFilteredIds.includes(id)));
+    } else {
+      setSelectedIds((prev) => Array.from(new Set([...prev, ...allFilteredIds])));
+    }
+  };
+
+  const isAllSelected =
+    filteredInvoices.length > 0 &&
+    filteredInvoices.every((inv) => selectedIds.includes(inv.id));
+  const isSomeSelected =
+    filteredInvoices.some((inv) => selectedIds.includes(inv.id)) && !isAllSelected;
+
+  const handleCopyPayLink = (inv: Invoice) => {
+    const payUrl = `${window.location.origin}/pay/${inv.id}`;
+    navigator.clipboard.writeText(payUrl);
+    toast.success(`Copied payment link for ${inv.number}`);
+  };
+
+  const handleBulkMarkSent = () => {
+    let count = 0;
+    for (const id of selectedIds) {
+      const inv = invoices.find((i) => i.id === id);
+      if (inv && inv.status !== 'paid') {
+        onStatusChange(id, 'sent');
+        count++;
+      }
+    }
+    toast.success(`Marked ${count} invoice(s) as Sent`);
+    setSelectedIds([]);
+  };
+
+  const handleBulkMarkPaid = () => {
+    for (const id of selectedIds) {
+      onStatusChange(id, 'paid');
+    }
+    toast.success(`Marked ${selectedIds.length} invoice(s) as Paid`);
+    setSelectedIds([]);
+  };
+
+  const handleBulkExportCSV = () => {
+    const selectedInvoices = invoices.filter((i) => selectedIds.includes(i.id));
+    if (selectedInvoices.length === 0) return;
+    exportInvoicesToCSV(selectedInvoices, 'Selected_Invoices.csv');
+    toast.success(`Exported ${selectedInvoices.length} invoices to CSV`);
+  };
+
+  const handleBulkDeleteConfirm = () => {
+    for (const id of selectedIds) {
+      onDelete(id);
+    }
+    toast.info(`Deleted ${selectedIds.length} invoice(s)`);
+    setSelectedIds([]);
+    setIsBulkDeleting(false);
+  };
+
   return (
     <div className="space-y-4">
       {/* Top Filter Bar: Tabs & Search */}
@@ -226,7 +363,7 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveFilter(tab.id)}
+                onClick={() => handleSelectFilterTab(tab.id)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
                   isSelected
                     ? 'bg-[#FF7916] text-white shadow-xs'
@@ -248,9 +385,9 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
           })}
         </div>
 
-        {/* Search & Export Actions */}
+        {/* Search, Period Filter & Export Actions */}
         <div className="flex items-center gap-2 w-full md:w-auto">
-          <div className="flex-1 md:w-64">
+          <div className="flex-1 md:w-56">
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -258,6 +395,16 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
               leftAddon={<Search className="w-4 h-4 text-slate-400" />}
             />
           </div>
+          <select
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value as 'all' | 'this_month' | 'last_30_days')}
+            className="h-9 px-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-medium text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#FF7916]/40 cursor-pointer shrink-0"
+            aria-label="Filter by period"
+          >
+            <option value="all">All Time</option>
+            <option value="this_month">This Month</option>
+            <option value="last_30_days">Last 30 Days</option>
+          </select>
           <button
             type="button"
             onClick={() => {
@@ -301,11 +448,22 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
               return (
                 <div
                   key={inv.id}
-                  className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm hover:border-slate-300 dark:hover:border-slate-700 transition-colors"
+                  className={`bg-white dark:bg-slate-900 rounded-2xl border transition-colors p-4 shadow-sm ${
+                    selectedIds.includes(inv.id)
+                      ? 'border-[#FF7916] bg-orange-50/20 dark:bg-orange-950/10'
+                      : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                  }`}
                 >
-                  {/* Header: Number + Retainer + Status */}
+                  {/* Header: Checkbox + Number + Retainer + Status */}
                   <div className="flex items-center justify-between gap-2 mb-2">
-                    <div className="flex items-center gap-1.5 flex-wrap">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(inv.id)}
+                        onChange={() => handleToggleSelect(inv.id)}
+                        className="w-4 h-4 rounded text-[#FF7916] focus:ring-[#FF7916] border-slate-300 dark:border-slate-700 dark:bg-slate-800 cursor-pointer"
+                        aria-label={`Select invoice ${inv.number}`}
+                      />
                       <button
                         type="button"
                         onClick={() => {
@@ -425,11 +583,79 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                    <th className="py-3 px-4 whitespace-nowrap">Invoice</th>
-                    <th className="py-3 px-4 min-w-[150px]">Client</th>
-                    <th className="py-3 px-4 whitespace-nowrap">Due Date</th>
+                    <th className="py-3 px-3 w-10 text-center">
+                      <input
+                        type="checkbox"
+                        checked={isAllSelected}
+                        ref={(el) => {
+                          if (el) el.indeterminate = isSomeSelected;
+                        }}
+                        onChange={handleSelectAll}
+                        className="w-4 h-4 rounded text-[#FF7916] focus:ring-[#FF7916] border-slate-300 dark:border-slate-700 dark:bg-slate-800 cursor-pointer"
+                        aria-label="Select all invoices"
+                      />
+                    </th>
+                    <th className="py-3 px-4 whitespace-nowrap">
+                      <button
+                        type="button"
+                        onClick={() => handleSort('issueDate')}
+                        className="inline-flex items-center gap-1 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+                        title="Sort by issue date"
+                      >
+                        <span>Invoice</span>
+                        {sortBy === 'issueDate' ? (
+                          sortDir === 'asc' ? <ArrowUp className="w-3 h-3 text-[#FF7916]" /> : <ArrowDown className="w-3 h-3 text-[#FF7916]" />
+                        ) : (
+                          <ArrowUpDown className="w-3 h-3 opacity-40" />
+                        )}
+                      </button>
+                    </th>
+                    <th className="py-3 px-4 min-w-[150px]">
+                      <button
+                        type="button"
+                        onClick={() => handleSort('client')}
+                        className="inline-flex items-center gap-1 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+                        title="Sort by client name"
+                      >
+                        <span>Client</span>
+                        {sortBy === 'client' ? (
+                          sortDir === 'asc' ? <ArrowUp className="w-3 h-3 text-[#FF7916]" /> : <ArrowDown className="w-3 h-3 text-[#FF7916]" />
+                        ) : (
+                          <ArrowUpDown className="w-3 h-3 opacity-40" />
+                        )}
+                      </button>
+                    </th>
+                    <th className="py-3 px-4 whitespace-nowrap">
+                      <button
+                        type="button"
+                        onClick={() => handleSort('dueDate')}
+                        className="inline-flex items-center gap-1 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+                        title="Sort by due date"
+                      >
+                        <span>Due Date</span>
+                        {sortBy === 'dueDate' ? (
+                          sortDir === 'asc' ? <ArrowUp className="w-3 h-3 text-[#FF7916]" /> : <ArrowDown className="w-3 h-3 text-[#FF7916]" />
+                        ) : (
+                          <ArrowUpDown className="w-3 h-3 opacity-40" />
+                        )}
+                      </button>
+                    </th>
                     <th className="py-3 px-4 whitespace-nowrap">Status</th>
-                    <th className="py-3 px-4 text-right whitespace-nowrap">Amount</th>
+                    <th className="py-3 px-4 text-right whitespace-nowrap">
+                      <button
+                        type="button"
+                        onClick={() => handleSort('amount')}
+                        className="inline-flex items-center justify-end gap-1 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer ml-auto"
+                        title="Sort by amount"
+                      >
+                        <span>Amount</span>
+                        {sortBy === 'amount' ? (
+                          sortDir === 'asc' ? <ArrowUp className="w-3 h-3 text-[#FF7916]" /> : <ArrowDown className="w-3 h-3 text-[#FF7916]" />
+                        ) : (
+                          <ArrowUpDown className="w-3 h-3 opacity-40" />
+                        )}
+                      </button>
+                    </th>
                     <th className="py-3 px-4 text-right whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
@@ -442,8 +668,23 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
                     return (
                       <tr
                         key={inv.id}
-                        className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors group"
+                        className={`transition-colors group ${
+                          selectedIds.includes(inv.id)
+                            ? 'bg-orange-50/40 dark:bg-orange-950/20'
+                            : 'hover:bg-slate-50/80 dark:hover:bg-slate-800/40'
+                        }`}
                       >
+                        {/* Checkbox */}
+                        <td className="py-3 px-3 w-10 text-center" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.includes(inv.id)}
+                            onChange={() => handleToggleSelect(inv.id)}
+                            className="w-4 h-4 rounded text-[#FF7916] focus:ring-[#FF7916] border-slate-300 dark:border-slate-700 dark:bg-slate-800 cursor-pointer"
+                            aria-label={`Select invoice ${inv.number}`}
+                          />
+                        </td>
+
                         {/* Invoice # */}
                         <td className="py-3 px-4 font-mono font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
                           <div className="flex items-center gap-1.5 flex-nowrap">
@@ -488,7 +729,14 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
 
                         {/* Status */}
                         <td className="py-3 px-4 whitespace-nowrap">
-                          <StatusBadge status={effectiveStatus} size="sm" />
+                          <div className="flex flex-col items-start gap-1">
+                            <StatusBadge status={effectiveStatus} size="sm" />
+                            {inv.lastRemindedAt && effectiveStatus !== 'paid' && (
+                              <span className="text-[10px] text-slate-400 font-medium">
+                                Reminded {formatRelativeTime(inv.lastRemindedAt)}
+                              </span>
+                            )}
+                          </div>
                         </td>
 
                         {/* Total Amount */}
@@ -522,24 +770,58 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
                               <Eye className="w-4 h-4" />
                             </button>
 
-                            {/* Quick Edit */}
+                            {/* Copy Public Payment Link */}
                             <button
-                              onClick={() => navigate(`/invoices/${inv.id}/edit`)}
-                              className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition-colors"
-                              title="Edit Invoice"
+                              type="button"
+                              onClick={() => handleCopyPayLink(inv)}
+                              className="p-1.5 rounded-lg text-slate-500 hover:text-[#FF7916] hover:bg-orange-50 dark:hover:bg-orange-950/50 transition-colors"
+                              title="Copy Payment Link"
                             >
-                              <Edit2 className="w-4 h-4" />
+                              <LinkIcon className="w-4 h-4" />
                             </button>
+
+                            {/* Smart Overdue Reminder (only when overdue) */}
+                            {effectiveStatus === 'overdue' && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSendModalMode('reminder');
+                                  setSendModalInvoice(inv);
+                                }}
+                                className="p-1.5 rounded-lg text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors"
+                                title="Send Overdue Reminder"
+                              >
+                                <BellRing className="w-4 h-4" />
+                              </button>
+                            )}
 
                             {/* Quick Send */}
                             <button
                               type="button"
-                              onClick={() => setSendModalInvoice(inv)}
+                              onClick={() => {
+                                setSendModalMode('send');
+                                setSendModalInvoice(inv);
+                              }}
                               className="p-1.5 rounded-lg text-slate-500 hover:text-[#FF7916] hover:bg-orange-50 dark:hover:bg-orange-950/50 transition-colors"
                               title="Send / Share Invoice"
                             >
                               <Send className="w-4 h-4" />
                             </button>
+
+                            {/* Quick Mark Paid (if unpaid) */}
+                            {effectiveStatus !== 'paid' && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  onStatusChange(inv.id, 'paid');
+                                  toast.success(`Marked ${inv.number} as Paid`);
+                                }}
+                                className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 transition-colors"
+                                title="Mark Paid"
+                              >
+                                <CheckCircle className="w-4 h-4" />
+                              </button>
+                            )}
 
                             {/* More dropdown trigger */}
                             <button
@@ -1013,6 +1295,69 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
         isOpen={Boolean(sendModalInvoice)}
         onClose={() => setSendModalInvoice(null)}
         invoice={sendModalInvoice}
+        mode={sendModalMode}
+      />
+
+      {/* Bulk Action Floating Dock */}
+      {selectedIds.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-slate-900 text-white dark:bg-white dark:text-slate-900 px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-2 sm:gap-3 border border-slate-800 dark:border-slate-200 animate-in slide-in-from-bottom-4 duration-150 max-w-[95vw] overflow-x-auto">
+          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-800 text-slate-200 dark:bg-slate-100 dark:text-slate-800 shrink-0">
+            {selectedIds.length} selected
+          </span>
+          <div className="h-4 w-px bg-slate-700 dark:bg-slate-300 shrink-0" />
+          <button
+            type="button"
+            onClick={handleBulkMarkSent}
+            className="flex items-center gap-1.5 text-xs font-medium hover:text-[#FF7916] transition-colors shrink-0 px-1 py-0.5 cursor-pointer"
+          >
+            <Send className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Mark Sent</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleBulkMarkPaid}
+            className="flex items-center gap-1.5 text-xs font-medium hover:text-emerald-500 transition-colors shrink-0 px-1 py-0.5 cursor-pointer"
+          >
+            <CheckCircle className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Mark Paid</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleBulkExportCSV}
+            className="flex items-center gap-1.5 text-xs font-medium hover:text-[#FF7916] transition-colors shrink-0 px-1 py-0.5 cursor-pointer"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>CSV</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsBulkDeleting(true)}
+            className="flex items-center gap-1.5 text-xs font-medium text-rose-400 hover:text-rose-300 transition-colors shrink-0 px-1 py-0.5 cursor-pointer"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Delete</span>
+          </button>
+          <div className="h-4 w-px bg-slate-700 dark:bg-slate-300 shrink-0" />
+          <button
+            type="button"
+            onClick={() => setSelectedIds([])}
+            className="p-1 rounded-lg hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors text-slate-400 dark:text-slate-500 hover:text-white dark:hover:text-slate-900 shrink-0 cursor-pointer"
+            title="Clear selection"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Bulk Delete Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={isBulkDeleting}
+        onClose={() => setIsBulkDeleting(false)}
+        onConfirm={handleBulkDeleteConfirm}
+        title={`Delete ${selectedIds.length} Invoice${selectedIds.length > 1 ? 's' : ''}?`}
+        message={`Are you sure you want to permanently delete ${selectedIds.length} selected invoice${selectedIds.length > 1 ? 's' : ''}? This action cannot be undone.`}
+        confirmLabel={`Delete ${selectedIds.length} Invoice${selectedIds.length > 1 ? 's' : ''}`}
+        variant="danger"
       />
     </div>
   );

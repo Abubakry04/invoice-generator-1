@@ -123,7 +123,7 @@ export const SubscriptionPage: React.FC = () => {
 
           <div className="w-full h-3 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
             <div
-              className={`h-full rounded-full transition-all duration-500 ${
+              className={`h-full rounded-full transition-all duration-700 animate-progress-fill ${
                 isUnlimited
                   ? 'bg-purple-600'
                   : usagePercent >= 90
@@ -149,7 +149,7 @@ export const SubscriptionPage: React.FC = () => {
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {planList.map((plan) => {
+          {planList.map((plan, planIdx) => {
             const isCurrent = subscription.planId === plan.id;
             const borderStyle = isCurrent
               ? plan.id === 'business'
@@ -162,11 +162,13 @@ export const SubscriptionPage: React.FC = () => {
             return (
               <div
                 key={plan.id}
-                className={`relative rounded-3xl p-6 sm:p-7 flex flex-col justify-between border transition-all ${borderStyle}`}
+                className={`relative rounded-3xl p-6 sm:p-7 flex flex-col justify-between border card-hover-elevate animate-fade-in-up ${
+                  planIdx === 0 ? 'stagger-1' : planIdx === 1 ? 'stagger-2' : 'stagger-3'
+                } ${borderStyle}`}
               >
                 {isCurrent && (
                   <span
-                    className={`absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full text-white text-[10px] font-extrabold uppercase tracking-wider shadow-xs ${
+                    className={`absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full text-white text-[10px] font-extrabold uppercase tracking-wider shadow-xs flex items-center gap-1.5 ${
                       plan.id === 'business'
                         ? 'bg-purple-600'
                         : plan.id === 'starter'
@@ -174,6 +176,7 @@ export const SubscriptionPage: React.FC = () => {
                         : 'bg-emerald-600'
                     }`}
                   >
+                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-live-beacon" />
                     Active Plan
                   </span>
                 )}

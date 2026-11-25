@@ -67,9 +67,11 @@ export function filterInvoicesForExport(
  */
 export function exportInvoicesToCSV(
   invoices: Invoice[],
-  options?: ExportDateRangeOptions
+  options?: ExportDateRangeOptions | string
 ): { count: number; filename: string } {
-  const targetInvoices = filterInvoicesForExport(invoices, options);
+  const opts = typeof options === 'string' ? undefined : options;
+  const customFilename = typeof options === 'string' ? options : undefined;
+  const targetInvoices = filterInvoicesForExport(invoices, opts);
 
   const headers = [
     'Invoice Number',
@@ -125,13 +127,15 @@ export function exportInvoicesToCSV(
 
   const csvContent = [headers.join(','), ...rows].join('\r\n');
   
-  let filename = `invoices-export-${new Date().toISOString().slice(0, 10)}.csv`;
-  if (options?.startDate && options?.endDate) {
-    filename = `invoices_${options.startDate}_to_${options.endDate}.csv`;
-  } else if (options?.startDate) {
-    filename = `invoices_from_${options.startDate}.csv`;
-  } else if (options?.endDate) {
-    filename = `invoices_until_${options.endDate}.csv`;
+  let filename = customFilename || `invoices-export-${new Date().toISOString().slice(0, 10)}.csv`;
+  if (!customFilename) {
+    if (opts?.startDate && opts?.endDate) {
+      filename = `invoices_${opts.startDate}_to_${opts.endDate}.csv`;
+    } else if (opts?.startDate) {
+      filename = `invoices_from_${opts.startDate}.csv`;
+    } else if (opts?.endDate) {
+      filename = `invoices_until_${opts.endDate}.csv`;
+    }
   }
 
   downloadCSV(filename, csvContent);
