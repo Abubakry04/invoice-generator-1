@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ToastProvider } from './components/ui/Toast';
 import { AppLayout } from './components/layout/AppLayout';
 import { DashboardPage } from './features/dashboard/DashboardPage';
@@ -15,6 +15,18 @@ import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { PlanUpgradeModal } from './components/saas/PlanUpgradeModal';
 import { initializeCloudSync } from './services/api/initSync';
 
+const ScrollToTop: React.FC = () => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [pathname]);
+
+  return null;
+};
+
 export const App: React.FC = () => {
   useEffect(() => {
     initializeCloudSync();
@@ -23,6 +35,7 @@ export const App: React.FC = () => {
   return (
     <ToastProvider>
       <BrowserRouter>
+        <ScrollToTop />
         <Routes>
           {/* Public Authentication & Registration Routes */}
           <Route path="/login" element={<AuthPage />} />

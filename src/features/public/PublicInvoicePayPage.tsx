@@ -23,6 +23,7 @@ import { formatDate } from '../../lib/dates';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { InvoicePDFDownloadButton } from '../invoices/InvoicePDFDownloadButton';
 import { PaymentReceiptModal } from '../invoices/PaymentReceiptModal';
+import { InvoiceLifecycleTimeline } from '../../components/invoices/InvoiceLifecycleTimeline';
 import { PaymentRecord } from '../../types';
 
 export const PublicInvoicePayPage: React.FC = () => {
@@ -168,24 +169,54 @@ export const PublicInvoicePayPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Real-time Document Lifecycle Stepper */}
+        <InvoiceLifecycleTimeline invoice={invoice} className="mb-6" />
+
         {/* Main Grid: Left Invoice Detail, Right Payment Gateway */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Invoice Summary Card */}
-          <div className="lg:col-span-7 bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
-            <div className="flex items-start justify-between border-b border-slate-100 dark:border-slate-800 pb-6">
+          <div className="lg:col-span-7 bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 border border-slate-200/90 dark:border-slate-800 shadow-xs space-y-6">
+            <div className="flex items-start justify-between border-b border-slate-100 dark:border-slate-800 pb-5">
               <div>
-                <span className="text-xs text-slate-400 font-mono font-medium">Invoice Number</span>
-                <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white mt-0.5">
+                <span className="text-[11px] text-slate-400 font-mono uppercase tracking-wider">Invoice Number</span>
+                <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mt-0.5 tracking-tight">
                   {invoice.number}
                 </h1>
               </div>
               <div className="text-right">
-                <span className="text-xs text-slate-400 font-medium">Total Amount</span>
-                <p className="text-2xl font-mono font-extrabold text-[#FF7916]">
+                <span className="text-[11px] text-slate-400 uppercase tracking-wider">Total Due</span>
+                <p className="text-xl sm:text-2xl font-mono font-bold text-slate-900 dark:text-white mt-0.5">
                   {formatCurrency(totals.total, invoice.currency)}
                 </p>
               </div>
             </div>
+
+            {/* Paid Settled Banner with 1-click Receipt */}
+            {(isPaid || (paymentSuccess && amountToCharge >= remainingBalance)) && (
+              <div className="px-4 py-3 bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200/80 dark:border-emerald-900/40 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-[11px] shrink-0">
+                    ✓
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-semibold text-emerald-900 dark:text-emerald-300">
+                      Payment Settled
+                    </h4>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                      Verified transaction record on EgolePay.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowReceiptModal(true)}
+                  className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-xs font-medium shrink-0 transition-colors cursor-pointer"
+                >
+                  <Receipt className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Download Receipt</span>
+                </button>
+              </div>
+            )}
 
             {/* Dates & Client Info */}
             <div className="grid grid-cols-2 gap-4 text-xs">

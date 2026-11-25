@@ -198,8 +198,14 @@ export const useInvoiceStore = create<InvoiceState>()(
             const totals = calculateTotals(inv.items, inv.discount, inv.taxRate);
 
             let newPaid = inv.paidAmount || 0;
+            let paidAt = inv.paidAt;
+            let sentAt = inv.sentAt;
+
             if (status === 'paid') {
               newPaid = totals.total;
+              paidAt = paidAt || new Date().toISOString();
+            } else if (status === 'sent') {
+              sentAt = sentAt || new Date().toISOString();
             } else if (status === 'partially_paid' && paidAmount !== undefined) {
               newPaid = paidAmount;
             } else if (status === 'draft') {
@@ -211,6 +217,8 @@ export const useInvoiceStore = create<InvoiceState>()(
               status,
               paidAmount: newPaid,
               outstandingAmount: Math.max(0, totals.total - newPaid),
+              sentAt,
+              paidAt,
               updatedAt: new Date().toISOString(),
             };
           }),
@@ -249,6 +257,7 @@ export const useInvoiceStore = create<InvoiceState>()(
               paidAmount: updatedPaid,
               outstandingAmount: outstanding,
               status: newStatus,
+              paidAt: newStatus === 'paid' ? inv.paidAt || new Date().toISOString() : inv.paidAt,
               payments: [...(inv.payments || []), newRecord],
               updatedAt: new Date().toISOString(),
             };

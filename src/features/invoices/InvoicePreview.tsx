@@ -37,11 +37,11 @@ export const InvoicePreview: React.FC<InvoicePreviewProps> = ({
       } rounded-md border border-slate-200/90 overflow-hidden print-sheet select-text flex flex-col justify-between ${className}`}
       style={{ boxSizing: 'border-box' }}
     >
-      {/* Watermark overlay */}
+      {/* Subtle Watermark overlay (only when explicitly set or requested) */}
       {watermark && watermark !== 'none' && (
         <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden z-10 select-none">
-          <div className="transform -rotate-35 border-4 border-dashed border-slate-400/20 px-14 py-4 rounded-3xl">
-            <span className="text-7xl font-black uppercase tracking-[0.2em] text-slate-400/20">
+          <div className="transform -rotate-30 border-2 border-dashed border-slate-300/30 px-12 py-3 rounded-2xl">
+            <span className="text-6xl font-black uppercase tracking-[0.2em] text-slate-300/30">
               {watermark}
             </span>
           </div>

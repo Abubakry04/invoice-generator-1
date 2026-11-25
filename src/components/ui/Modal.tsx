@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 export interface ModalProps {
@@ -51,6 +52,7 @@ export const Modal: React.FC<ModalProps> = ({
   }, [isOpen]);
 
   if (!isOpen) return null;
+  if (typeof document === 'undefined') return null;
 
   const maxWidthClass = {
     sm: 'max-w-sm',
@@ -63,29 +65,32 @@ export const Modal: React.FC<ModalProps> = ({
     '5xl': 'max-w-5xl',
   }[maxWidth];
 
-  return (
+  const modalContent = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 overflow-y-auto"
+      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-5 overflow-y-auto"
       role="dialog"
       aria-modal="true"
     >
-      {/* Backdrop with smooth blur and fade */}
+      {/* Full-screen Backdrop covering entire window including sidebar and header */}
       <div
-        className="fixed inset-0 bg-slate-950/65 dark:bg-black/80 backdrop-blur-md transition-opacity animate-in fade-in duration-200"
+        className="fixed inset-0 bg-slate-950/70 dark:bg-black/80 backdrop-blur-md transition-opacity animate-in fade-in duration-200"
         onClick={onClose}
         aria-hidden="true"
       />
 
-      {/* Modal Card Surface */}
+      {/* Modal Dialog Surface (Bottom-Sheet on mobile, centered modal on desktop) */}
       <div
         ref={modalRef}
-        className={`relative w-full ${maxWidthClass} bg-white dark:bg-slate-900 rounded-3xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3),0_0_0_1px_rgba(255,255,255,0.06)] border border-slate-200/90 dark:border-slate-800 p-5 sm:p-6 z-10 transition-all transform animate-in fade-in-0 zoom-in-95 duration-200 ease-out my-auto ${className}`}
+        className={`relative w-full ${maxWidthClass} max-h-[88vh] sm:max-h-[90vh] flex flex-col bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-2xl shadow-2xl border-t sm:border border-slate-200/80 dark:border-slate-800 p-5 sm:p-6 z-10 transition-all transform animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-150 ease-out ${className}`}
       >
-        {/* Header */}
-        <div className="flex items-start justify-between gap-3.5 pb-4 mb-4 border-b border-slate-100 dark:border-slate-800/80">
+        {/* Mobile Drag Handle Bar */}
+        <div className="w-10 h-1 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto mb-3 shrink-0 sm:hidden" />
+
+        {/* Header (shrink-0 at top of card) */}
+        <div className="shrink-0 flex items-start justify-between gap-3.5 pb-4 mb-3 border-b border-slate-100 dark:border-slate-800/80">
           <div className="flex items-start gap-3 min-w-0">
             {icon && (
-              <div className="w-10 h-10 rounded-2xl bg-orange-50 dark:bg-orange-950/40 border border-orange-100 dark:border-orange-900/50 text-[#FF7916] flex items-center justify-center shrink-0 shadow-2xs">
+              <div className="w-9 h-9 rounded-xl bg-orange-50 dark:bg-orange-950/40 border border-orange-100 dark:border-orange-900/50 text-[#FF7916] flex items-center justify-center shrink-0 shadow-2xs">
                 {icon}
               </div>
             )}
@@ -97,7 +102,7 @@ export const Modal: React.FC<ModalProps> = ({
                 {badge}
               </div>
               {description && (
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
                   {description}
                 </p>
               )}
@@ -108,25 +113,27 @@ export const Modal: React.FC<ModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-2xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/80 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 active:scale-95 transition-all cursor-pointer shrink-0"
+            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
             aria-label="Close dialog"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Content Body */}
-        <div className="max-h-[calc(88vh-8rem)] overflow-y-auto pr-0.5 space-y-4">
+        {/* Content Body (scrollable if content overflows card) */}
+        <div className="flex-1 overflow-y-auto pr-1 space-y-4 min-h-0">
           {children}
         </div>
 
-        {/* Optional Footer Slot */}
+        {/* Optional Footer Slot (shrink-0 at bottom of card) */}
         {footer && (
-          <div className="pt-4 mt-5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-end gap-2.5">
+          <div className="shrink-0 pt-3.5 mt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-end gap-2.5">
             {footer}
           </div>
         )}
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };

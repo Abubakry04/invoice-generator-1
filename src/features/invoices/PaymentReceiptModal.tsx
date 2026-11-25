@@ -1,4 +1,5 @@
 import React, { useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Printer, Download, X, CheckCircle, Building2, Calendar, Hash, ArrowLeft } from 'lucide-react';
 import { Invoice, PaymentRecord } from '../../types';
 import { formatCurrency } from '../../lib/formatCurrency';
@@ -22,6 +23,7 @@ export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({
   const receiptRef = useRef<HTMLDivElement>(null);
 
   if (!isOpen || !invoice || !payment) return null;
+  if (typeof document === 'undefined') return null;
 
   const totals = calculateTotals(invoice.items, invoice.discount, invoice.taxRate);
   const remainingAfterPayment = Math.max(0, totals.total - (invoice.paidAmount || 0));
@@ -30,11 +32,11 @@ export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({
     window.print();
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-950/70 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-slate-900 w-full max-w-xl rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.35),0_0_0_1px_rgba(255,255,255,0.06)] overflow-hidden animate-in fade-in-0 zoom-in-95 duration-200 ease-out">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-5 bg-slate-950/70 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-slate-900 w-full max-w-xl max-h-[90vh] flex flex-col rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xl overflow-hidden animate-in fade-in-0 zoom-in-95 duration-150 ease-out">
         {/* Modal Controls Header */}
-        <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-slate-100 dark:border-slate-800 print:hidden">
+        <div className="shrink-0 flex items-center justify-between px-5 sm:px-6 py-4 border-b border-slate-100 dark:border-slate-800 print:hidden">
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold text-slate-800 dark:text-white uppercase tracking-wider">
               Payment Receipt
@@ -187,7 +189,8 @@ export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

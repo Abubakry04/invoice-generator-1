@@ -5,6 +5,7 @@ import { InvoicePDFDownloadButton } from './InvoicePDFDownloadButton';
 import { RecordPaymentModal } from './RecordPaymentModal';
 import { PaymentReceiptModal } from './PaymentReceiptModal';
 import { SendInvoiceModal } from './SendInvoiceModal';
+import { InvoiceLifecycleTimeline } from '../../components/invoices/InvoiceLifecycleTimeline';
 import { Invoice, PaymentRecord } from '../../types';
 import { Button } from '../../components/ui/Button';
 import {
@@ -79,6 +80,9 @@ export const InvoiceViewModal: React.FC<InvoiceViewModalProps> = ({
         maxWidth="4xl"
       >
         <div className="space-y-4">
+          {/* Interactive Document Lifecycle Timeline */}
+          <InvoiceLifecycleTimeline invoice={liveInvoice} />
+
           {/* Action Bar & Tabs */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
             {/* View Switcher Tabs */}

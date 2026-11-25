@@ -51,11 +51,39 @@ export function formatDate(dateString: string): string {
  * Determines whether an invoice's due date has passed without being paid
  */
 export function isOverdue(dueDate: string, status: InvoiceStatus): boolean {
-  if (status === 'paid') return false;
+  if (status === 'paid' || status === 'cancelled') return false;
   if (!dueDate) return false;
 
   const today = getTodayDateString();
   return dueDate < today;
+}
+
+/**
+ * Returns number of days past dueDate (0 if not overdue)
+ */
+export function getDaysOverdue(dueDate: string): number {
+  if (!dueDate) return 0;
+  const today = getTodayDateString();
+  if (dueDate >= today) return 0;
+  const dueMs = new Date(`${dueDate}T00:00:00`).getTime();
+  const todayMs = new Date(`${today}T00:00:00`).getTime();
+  return Math.max(0, Math.floor((todayMs - dueMs) / (1000 * 60 * 60 * 24)));
+}
+
+/**
+ * Formats an ISO timestamp into a concise relative string (e.g. "2h ago", "3d ago")
+ */
+export function formatRelativeTime(isoDate?: string): string {
+  if (!isoDate) return '';
+  const diffMs = Date.now() - new Date(isoDate).getTime();
+  if (Number.isNaN(diffMs) || diffMs < 0) return '';
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
 }
 
 /**

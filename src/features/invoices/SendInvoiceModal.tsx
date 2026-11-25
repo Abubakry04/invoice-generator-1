@@ -20,7 +20,7 @@ import { Input } from '../../components/ui/Input';
 import { Invoice } from '../../types';
 import { calculateTotals } from '../../lib/calculateTotals';
 import { formatCurrency } from '../../lib/formatCurrency';
-import { formatDate } from '../../lib/dates';
+import { formatDate, getDaysOverdue, getEffectiveStatus } from '../../lib/dates';
 import { useToast } from '../../components/ui/Toast';
 import { useInvoiceStore } from '../../store/invoiceStore';
 import { InvoicePDFDownloadButton } from './InvoicePDFDownloadButton';
@@ -29,6 +29,7 @@ export interface SendInvoiceModalProps {
   isOpen: boolean;
   onClose: () => void;
   invoice: Invoice | null;
+  mode?: 'send' | 'reminder';
 }
 
 type SendMode = 'email' | 'whatsapp' | 'link' | 'pdf';
@@ -37,9 +38,10 @@ export const SendInvoiceModal: React.FC<SendInvoiceModalProps> = ({
   isOpen,
   onClose,
   invoice,
+  mode = 'send',
 }) => {
   const toast = useToast();
-  const { updateStatus } = useInvoiceStore();
+  const { updateStatus, updateInvoice } = useInvoiceStore();
 
   const [activeMode, setActiveMode] = useState<SendMode>('email');
   const [copiedLink, setCopiedLink] = useState(false);
@@ -47,6 +49,7 @@ export const SendInvoiceModal: React.FC<SendInvoiceModalProps> = ({
   const [copiedWhatsAppText, setCopiedWhatsAppText] = useState(false);
   const [showQr, setShowQr] = useState(false);
   const [autoMarkSent, setAutoMarkSent] = useState(true);
+  const [isReminder, setIsReminder] = useState(mode === 'reminder');
 
   // Form states initialized from invoice
   const [recipientEmail, setRecipientEmail] = useState('');
@@ -56,37 +59,73 @@ export const SendInvoiceModal: React.FC<SendInvoiceModalProps> = ({
   // Sync state whenever invoice opens
   React.useEffect(() => {
     if (invoice) {
+      const eff = getEffectiveStatus(invoice);
+      const reminderActive = mode === 'reminder' || eff === 'overdue';
+      setIsReminder(mode === 'reminder');
       setRecipientEmail(invoice.client.email || '');
-      setEmailSubject(`Invoice ${invoice.number} from ${invoice.business.name || 'EgolePay'}`);
+      setEmailSubject(
+        mode === 'reminder'
+          ? `Payment Reminder: Invoice ${invoice.number} (${invoice.business.name || 'EgolePay'})`
+          : `Invoice ${invoice.number} from ${invoice.business.name || 'EgolePay'}`
+      );
+      if (reminderActive && mode === 'reminder') {
+        setActiveMode('whatsapp');
+      }
       setRecipientPhone(invoice.client.phone || '');
       setCopiedLink(false);
       setCopiedEmailText(false);
       setCopiedWhatsAppText(false);
       setShowQr(false);
     }
-  }, [invoice, isOpen]);
+  }, [invoice, isOpen, mode]);
 
   if (!invoice) return null;
 
   const totals = calculateTotals(invoice.items, invoice.discount, invoice.taxRate);
+  const effectiveStatus = getEffectiveStatus(invoice);
+  const paidAmount = invoice.paidAmount || (effectiveStatus === 'paid' ? totals.total : 0);
+  const balanceDue = invoice.outstandingAmount ?? Math.max(0, totals.total - paidAmount);
+  const daysOverdue = effectiveStatus === 'overdue' ? getDaysOverdue(invoice.dueDate) : 0;
   const payUrl = `${window.location.origin}/pay/${invoice.id}`;
   const isAlreadySentOrPaid = invoice.status === 'sent' || invoice.status === 'paid';
 
   const markAsSentIfRequested = () => {
-    if (autoMarkSent && !isAlreadySentOrPaid) {
+    if (isReminder) {
+      updateInvoice(invoice.id, { lastRemindedAt: new Date().toISOString() });
+      toast.success(`Reminder logged for ${invoice.number}`);
+    } else if (autoMarkSent && !isAlreadySentOrPaid) {
       updateStatus(invoice.id, 'sent');
       toast.success(`Invoice ${invoice.number} marked as Sent`);
     }
   };
 
   // Pre-formatted email content
-  const emailBody = `Hello ${invoice.client.name || 'there'},
+  const emailBody = isReminder
+    ? `Hello ${invoice.client.name || 'there'},
+
+This is a friendly reminder regarding Invoice ${invoice.number} from ${invoice.business.name || 'EgolePay'}, which was due on ${formatDate(invoice.dueDate)}${daysOverdue > 0 ? ` (${daysOverdue} ${daysOverdue === 1 ? 'day' : 'days'} overdue)` : ''}.
+
+Outstanding Summary:
+• Invoice Number: ${invoice.number}
+• Balance Due: ${formatCurrency(balanceDue, invoice.currency)}
+• Original Due Date: ${formatDate(invoice.dueDate)}
+
+You can view the invoice and settle the balance online directly via this link:
+${payUrl}
+
+If you have already made this payment, please disregard this message.
+
+Best regards,
+${invoice.business.name || 'EgolePay'}
+${invoice.business.email ? `Email: ${invoice.business.email}` : ''}
+${invoice.business.phone ? `Phone: ${invoice.business.phone}` : ''}`
+    : `Hello ${invoice.client.name || 'there'},
 
 Please find invoice ${invoice.number} for ${formatCurrency(totals.total, invoice.currency)} from ${invoice.business.name || 'EgolePay'}.
 
 Invoice Summary:
 • Invoice Number: ${invoice.number}
-• Amount Due: ${formatCurrency(totals.total, invoice.currency)}
+• Amount Due: ${formatCurrency(balanceDue, invoice.currency)}
 • Due Date: ${formatDate(invoice.dueDate)}
 
 You can view the full breakdown and make payment online directly via this link:
@@ -100,10 +139,21 @@ ${invoice.business.email ? `Email: ${invoice.business.email}` : ''}
 ${invoice.business.phone ? `Phone: ${invoice.business.phone}` : ''}`;
 
   // Pre-formatted WhatsApp content
-  const whatsappBody = `Hello *${invoice.client.name || 'there'}* 👋
+  const whatsappBody = isReminder
+    ? `Hello *${invoice.client.name || 'there'}*,
+
+Friendly reminder regarding Invoice *#${invoice.number}* from *${invoice.business.name || 'EgolePay'}*:
+• *Balance Due:* ${formatCurrency(balanceDue, invoice.currency)}
+• *Due Date:* ${formatDate(invoice.dueDate)}${daysOverdue > 0 ? ` (${daysOverdue}d overdue)` : ''}
+
+👉 *View & Pay Online:*
+${payUrl}
+
+Please let us know if you need anything or have already remitted payment. Thank you!`
+    : `Hello *${invoice.client.name || 'there'}* 👋
 
 Here is Invoice *#${invoice.number}* from *${invoice.business.name || 'EgolePay'}*:
-• *Amount Due:* ${formatCurrency(totals.total, invoice.currency)}
+• *Amount Due:* ${formatCurrency(balanceDue, invoice.currency)}
 • *Due Date:* ${formatDate(invoice.dueDate)}
 
 👉 *View & Pay Online:*
@@ -142,8 +192,15 @@ Thank you for your business!`;
 
   const handleSendWhatsApp = () => {
     markAsSentIfRequested();
-    // Normalize phone number (strip spaces, symbols, plus)
-    const cleanPhone = recipientPhone.replace(/[^0-9]/g, '');
+    // Normalize phone number (strip non-digits)
+    let cleanPhone = recipientPhone.replace(/[^0-9]/g, '');
+    // Auto-normalize Nigerian local format: 080... (11 digits) -> 23480...
+    if (cleanPhone.startsWith('0') && cleanPhone.length === 11) {
+      cleanPhone = '234' + cleanPhone.slice(1);
+    } else if (cleanPhone.length === 10 && !cleanPhone.startsWith('234')) {
+      cleanPhone = '234' + cleanPhone;
+    }
+
     const waUrl = cleanPhone
       ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(whatsappBody)}`
       : `https://wa.me/?text=${encodeURIComponent(whatsappBody)}`;
@@ -182,21 +239,70 @@ Thank you for your business!`;
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      icon={<Send className="w-5 h-5 text-[#FF7916]" />}
-      title={`Send Invoice ${invoice.number}`}
-      description={`${invoice.client.name || 'Client'} • Total: ${formatCurrency(
-        totals.total,
-        invoice.currency
-      )}`}
+      icon={<Send className={`w-5 h-5 ${isReminder ? 'text-rose-500' : 'text-[#FF7916]'}`} />}
+      title={isReminder ? `Send Overdue Reminder — ${invoice.number}` : `Send Invoice ${invoice.number}`}
+      description={
+        isReminder
+          ? `${invoice.client.name || 'Client'} • Balance Due: ${formatCurrency(
+              balanceDue,
+              invoice.currency
+            )}${daysOverdue > 0 ? ` (${daysOverdue}d overdue)` : ''}`
+          : `${invoice.client.name || 'Client'} • Total: ${formatCurrency(
+              totals.total,
+              invoice.currency
+            )}`
+      }
       maxWidth="2xl"
+      footer={
+        <div className="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          {effectiveStatus === 'overdue' ? (
+            <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-slate-600 dark:text-slate-300">
+              <input
+                type="checkbox"
+                checked={isReminder}
+                onChange={(e) => {
+                  const next = e.target.checked;
+                  setIsReminder(next);
+                  setEmailSubject(
+                    next
+                      ? `Payment Reminder: Invoice ${invoice.number} (${invoice.business.name || 'EgolePay'})`
+                      : `Invoice ${invoice.number} from ${invoice.business.name || 'EgolePay'}`
+                  );
+                }}
+                className="w-4 h-4 rounded text-rose-500 focus:ring-rose-500 border-slate-300 dark:border-slate-700"
+              />
+              <span>Use overdue payment reminder template</span>
+            </label>
+          ) : (
+            <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-slate-600 dark:text-slate-300">
+              <input
+                type="checkbox"
+                checked={autoMarkSent}
+                onChange={(e) => setAutoMarkSent(e.target.checked)}
+              disabled={isAlreadySentOrPaid}
+              className="w-4 h-4 rounded text-[#FF7916] focus:ring-[#FF7916] border-slate-300 dark:border-slate-700"
+            />
+            <span>
+              {isAlreadySentOrPaid
+                ? `Invoice is currently marked as ${invoice.status.toUpperCase()}`
+                : 'Automatically mark invoice as "Sent" when dispatched'}
+            </span>
+          </label>
+          )}
+
+          <Button type="button" variant="primary" size="sm" onClick={onClose} className="text-xs font-bold px-4">
+            Done
+          </Button>
+        </div>
+      }
     >
-      <div className="space-y-5">
+      <div className="space-y-4">
         {/* Mode Selector Tabs */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-1.5 bg-slate-100 dark:bg-slate-800/80 rounded-2xl">
           <button
             type="button"
             onClick={() => setActiveMode('email')}
-            className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               activeMode === 'email'
                 ? 'bg-white dark:bg-slate-900 text-[#FF7916] shadow-xs'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -209,7 +315,7 @@ Thank you for your business!`;
           <button
             type="button"
             onClick={() => setActiveMode('whatsapp')}
-            className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               activeMode === 'whatsapp'
                 ? 'bg-white dark:bg-slate-900 text-emerald-600 shadow-xs'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -222,7 +328,7 @@ Thank you for your business!`;
           <button
             type="button"
             onClick={() => setActiveMode('link')}
-            className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               activeMode === 'link'
                 ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-xs'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -235,7 +341,7 @@ Thank you for your business!`;
           <button
             type="button"
             onClick={() => setActiveMode('pdf')}
-            className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               activeMode === 'pdf'
                 ? 'bg-white dark:bg-slate-900 text-purple-600 shadow-xs'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -248,7 +354,7 @@ Thank you for your business!`;
 
         {/* MODE 1: EMAIL */}
         {activeMode === 'email' && (
-          <div className="space-y-4 animate-in fade-in-50 duration-200">
+          <div className="space-y-3.5 animate-in fade-in-50 duration-200">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Input
                 label="Recipient Email"
@@ -264,16 +370,16 @@ Thank you for your business!`;
               />
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
                 Message Preview
               </label>
-              <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-mono text-slate-700 dark:text-slate-300 whitespace-pre-wrap max-h-48 overflow-y-auto leading-relaxed">
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-mono text-slate-700 dark:text-slate-300 whitespace-pre-wrap max-h-32 sm:max-h-36 overflow-y-auto leading-relaxed">
                 {emailBody}
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 pt-2">
+            <div className="flex flex-wrap items-center gap-2 pt-1">
               <Button
                 type="button"
                 variant="primary"
@@ -315,21 +421,25 @@ Thank you for your business!`;
 
         {/* MODE 2: WHATSAPP */}
         {activeMode === 'whatsapp' && (
-          <div className="space-y-4 animate-in fade-in-50 duration-200">
+          <div className="space-y-3.5 animate-in fade-in-50 duration-200">
             <Input
               label="Client WhatsApp Phone Number"
               placeholder="+234 810 000 0000"
               value={recipientPhone}
               onChange={(e) => setRecipientPhone(e.target.value)}
-              helperText="Enter with country code (e.g. 2348012345678 or +234...)"
+              helperText={
+                recipientPhone
+                  ? "Auto-formatted with international WhatsApp dialing format"
+                  : "Enter phone (e.g. 080... or +234...)"
+              }
             />
 
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
                 WhatsApp Message Preview
               </label>
-              <div className="p-4 bg-emerald-50/70 dark:bg-emerald-950/30 rounded-2xl border border-emerald-200/80 dark:border-emerald-900/40 text-xs text-slate-800 dark:text-slate-200 whitespace-pre-wrap leading-relaxed shadow-2xs">
-                <div className="flex items-center gap-2 mb-2 font-semibold text-emerald-800 dark:text-emerald-400">
+              <div className="p-3.5 bg-emerald-50/70 dark:bg-emerald-950/30 rounded-2xl border border-emerald-200/80 dark:border-emerald-900/40 text-xs text-slate-800 dark:text-slate-200 whitespace-pre-wrap max-h-32 sm:max-h-36 overflow-y-auto leading-relaxed shadow-2xs">
+                <div className="flex items-center gap-2 mb-1.5 font-semibold text-emerald-800 dark:text-emerald-400">
                   <Smartphone className="w-4 h-4" />
                   <span>WhatsApp Message</span>
                 </div>
@@ -337,7 +447,7 @@ Thank you for your business!`;
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 pt-2">
+            <div className="flex flex-wrap items-center gap-2 pt-1">
               <Button
                 type="button"
                 variant="primary"
@@ -488,28 +598,6 @@ Thank you for your business!`;
             </div>
           </div>
         )}
-
-        {/* Footer: Automatic status update & Close */}
-        <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-slate-600 dark:text-slate-300">
-            <input
-              type="checkbox"
-              checked={autoMarkSent}
-              onChange={(e) => setAutoMarkSent(e.target.checked)}
-              disabled={isAlreadySentOrPaid}
-              className="w-4 h-4 rounded text-[#FF7916] focus:ring-[#FF7916] border-slate-300 dark:border-slate-700"
-            />
-            <span>
-              {isAlreadySentOrPaid
-                ? `Invoice is currently marked as ${invoice.status.toUpperCase()}`
-                : 'Automatically mark invoice as "Sent" when dispatched'}
-            </span>
-          </label>
-
-          <Button type="button" variant="ghost" size="sm" onClick={onClose} className="text-xs">
-            Done
-          </Button>
-        </div>
       </div>
     </Modal>
   );

@@ -30,6 +30,7 @@ import { useSettingsStore } from '../../store/settingsStore';
 import { useProductStore } from '../../store/productStore';
 import { useSubscriptionStore } from '../../store/subscriptionStore';
 import { useUiStore } from '../../store/uiStore';
+import { useToast } from '../../components/ui/Toast';
 import { CatalogPickerModal } from '../inventory/CatalogPickerModal';
 import { ProductItem } from '../../types';
 import { Input } from '../../components/ui/Input';
@@ -69,6 +70,7 @@ const QUICK_TERMS = [
 ];
 
 export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form }) => {
+  const toast = useToast();
   const { clients } = useClientStore();
   const { settings } = useSettingsStore();
   const { products } = useProductStore();
@@ -147,6 +149,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form }) => {
       if (client.phone) {
         setValue('client.phone', client.phone, { shouldDirty: true });
       }
+      toast.success(`Loaded profile for ${client.name}`);
     }
   };
 

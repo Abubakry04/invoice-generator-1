@@ -61,17 +61,20 @@ export const DashboardPage: React.FC = () => {
       const { total } = calculateTotals(inv.items, inv.discount, inv.taxRate);
       const effectiveStatus = getEffectiveStatus(inv);
 
+      if (effectiveStatus === 'cancelled') continue;
+
+      const paid = Math.min(total, inv.paidAmount || (effectiveStatus === 'paid' ? total : 0));
+      const outstanding = inv.outstandingAmount ?? Math.max(0, total - paid);
+
       totalInvoiced += total;
+      totalPaid += paid;
+      totalOutstanding += outstanding;
 
       if (effectiveStatus === 'paid') {
-        totalPaid += total;
         paidCount++;
-      } else {
-        totalOutstanding += total;
-        if (effectiveStatus === 'overdue') {
-          totalOverdue += total;
-          overdueCount++;
-        }
+      } else if (effectiveStatus === 'overdue') {
+        totalOverdue += outstanding;
+        overdueCount++;
       }
     }
 
@@ -171,7 +174,7 @@ export const DashboardPage: React.FC = () => {
 
       {/* Near-Limit Warning (Dynamically adjusts to user's plan limit) */}
       {subscription.planId !== 'business' && currentPlan.invoiceLimit !== Infinity && subscription.invoicesCreatedThisMonth >= Math.max(1, currentPlan.invoiceLimit - 1) && (
-        <div className="p-3.5 rounded-2xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/60 flex items-center justify-between gap-3 text-xs animate-soft-pulse">
+        <div className="p-3.5 rounded-xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/60 flex items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2.5">
             <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
             <span className="text-slate-700 dark:text-slate-300">
@@ -190,10 +193,13 @@ export const DashboardPage: React.FC = () => {
       {/* 2. Four Clean KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Invoiced */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs row-interactive">
+        <div
+          onClick={() => navigate('/invoices')}
+          className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs card-hover-elevate animate-fade-in-up stagger-1 group cursor-pointer"
+        >
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Total Invoiced</span>
-            <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400">
+            <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform duration-200">
               <TrendingUp className="w-4 h-4" />
             </div>
           </div>
@@ -206,10 +212,13 @@ export const DashboardPage: React.FC = () => {
         </div>
 
         {/* Collected */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs row-interactive">
+        <div
+          onClick={() => navigate('/invoices?status=paid')}
+          className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs card-hover-elevate animate-fade-in-up stagger-2 group cursor-pointer"
+        >
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Collected (Paid)</span>
-            <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400">
+            <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform duration-200">
               <CheckCircle2 className="w-4 h-4" />
             </div>
           </div>
@@ -222,10 +231,13 @@ export const DashboardPage: React.FC = () => {
         </div>
 
         {/* Outstanding */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs row-interactive">
+        <div
+          onClick={() => navigate('/invoices?status=sent')}
+          className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs card-hover-elevate animate-fade-in-up stagger-3 group cursor-pointer"
+        >
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Outstanding Balance</span>
-            <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400">
+            <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform duration-200">
               <Clock className="w-4 h-4" />
             </div>
           </div>
@@ -238,10 +250,13 @@ export const DashboardPage: React.FC = () => {
         </div>
 
         {/* Overdue */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs row-interactive">
+        <div
+          onClick={() => navigate('/invoices?status=overdue')}
+          className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs card-hover-elevate animate-fade-in-up stagger-4 group cursor-pointer"
+        >
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Overdue</span>
-            <div className={`p-2 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 ${stats.overdueCount > 0 ? 'animate-soft-pulse' : ''}`}>
+            <div className="p-2 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400">
               <AlertTriangle className="w-4 h-4" />
             </div>
           </div>
@@ -288,7 +303,7 @@ export const DashboardPage: React.FC = () => {
             return (
               <div className="pt-6 pb-2">
                 <div className="flex items-end justify-between gap-3 h-36">
-                  {monthlyRevenue.map((m) => {
+                  {monthlyRevenue.map((m, idx) => {
                     const pct = Math.round((m.total / maxVal) * 100);
                     return (
                       <div key={m.key} className="flex-1 flex flex-col items-center gap-2 group h-full justify-end">
@@ -297,11 +312,14 @@ export const DashboardPage: React.FC = () => {
                         </span>
                         <div className="w-full max-w-[48px] bg-slate-100 dark:bg-slate-800 rounded-t-lg h-28 flex items-end overflow-hidden p-0.5">
                           <div
-                            className="w-full rounded-t-md bg-gradient-to-t from-[#FF7916] to-amber-500 hover:from-[#ea580c] hover:to-[#FF7916] transition-all duration-300"
-                            style={{ height: `${Math.max(pct, m.total > 0 ? 8 : 2)}%` }}
+                            className="w-full rounded-t-md bg-gradient-to-t from-[#FF7916] to-amber-500 hover:from-[#ea580c] hover:to-[#FF7916] transition-all duration-300 animate-bar-grow"
+                            style={{
+                              height: `${Math.max(pct, m.total > 0 ? 8 : 2)}%`,
+                              animationDelay: `${idx * 80}ms`,
+                            }}
                           />
                         </div>
-                        <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">{m.label}</span>
+                        <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 group-hover:text-[#FF7916] transition-colors">{m.label}</span>
                       </div>
                     );
                   })}
@@ -312,7 +330,7 @@ export const DashboardPage: React.FC = () => {
         </div>
 
         {/* Right: Invoice Status Breakdown (1 col) */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs flex flex-col justify-between">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs flex flex-col justify-between card-hover-elevate">
           <div>
             <div className="pb-3 border-b border-slate-100 dark:border-slate-800">
               <h2 className="text-sm font-bold text-slate-900 dark:text-white">Status Breakdown</h2>
@@ -326,20 +344,25 @@ export const DashboardPage: React.FC = () => {
                 statusBreakdown.map(({ status, count }) => {
                   const share = stats.totalCount > 0 ? Math.round((count / stats.totalCount) * 100) : 0;
                   return (
-                    <div key={status} className="space-y-1">
+                    <button
+                      type="button"
+                      key={status}
+                      onClick={() => navigate(`/invoices?status=${status}`)}
+                      className="w-full text-left space-y-1 p-1.5 -mx-1.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors cursor-pointer group"
+                    >
                       <div className="flex items-center justify-between text-xs">
                         <StatusBadge status={status} size="sm" />
-                        <span className="font-mono text-slate-600 dark:text-slate-300 font-semibold">
+                        <span className="font-mono text-slate-600 dark:text-slate-300 font-semibold group-hover:text-[#FF7916] transition-colors">
                           {count} ({share}%)
                         </span>
                       </div>
                       <div className="w-full h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                         <div
-                          className="h-full rounded-full bg-[#FF7916]"
+                          className="h-full rounded-full bg-[#FF7916] animate-progress-fill transition-all duration-700"
                           style={{ width: `${share}%` }}
                         />
                       </div>
-                    </div>
+                    </button>
                   );
                 })
               )}
@@ -349,7 +372,7 @@ export const DashboardPage: React.FC = () => {
       </div>
 
       {/* 3. Recent Invoices (Full Width Clean Financial Table) */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden animate-fade-in-up stagger-5">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
           <div>
             <h2 className="text-base font-bold text-slate-900 dark:text-white">Recent Invoices</h2>

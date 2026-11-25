@@ -136,15 +136,15 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({
                 </Text>
                 <View
                   style={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.25)',
-                    paddingHorizontal: 6,
-                    paddingVertical: 2,
+                    backgroundColor: invoice.status === 'paid' ? '#059669' : 'rgba(255, 255, 255, 0.25)',
+                    paddingHorizontal: 7,
+                    paddingVertical: 2.5,
                     borderRadius: 4,
                     marginTop: 4,
                   }}
                 >
-                  <Text style={{ fontSize: 7, color: '#ffffff', textTransform: 'uppercase' }}>
-                    Status: {invoice.status}
+                  <Text style={{ fontSize: 7, fontFamily: 'Helvetica-Bold', color: '#ffffff', textTransform: 'uppercase' }}>
+                    {invoice.status === 'paid' ? 'PAID IN FULL' : `Status: ${invoice.status}`}
                   </Text>
                 </View>
               </View>
