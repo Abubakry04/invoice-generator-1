@@ -6,6 +6,7 @@ import { RecordPaymentModal } from './RecordPaymentModal';
 import { PaymentReceiptModal } from './PaymentReceiptModal';
 import { SendInvoiceModal } from './SendInvoiceModal';
 import { InvoiceLifecycleTimeline } from '../../components/invoices/InvoiceLifecycleTimeline';
+import { PrintableInvoicePortal, triggerInvoicePrint } from '../../components/invoices/PrintableInvoicePortal';
 import { Invoice, PaymentRecord } from '../../types';
 import { Button } from '../../components/ui/Button';
 import {
@@ -160,7 +161,7 @@ export const InvoiceViewModal: React.FC<InvoiceViewModalProps> = ({
                 variant="ghost"
                 size="sm"
                 icon={<Printer className="w-3.5 h-3.5" />}
-                onClick={() => window.print()}
+                onClick={triggerInvoicePrint}
                 className="text-xs"
               >
                 Print
@@ -318,6 +319,8 @@ export const InvoiceViewModal: React.FC<InvoiceViewModalProps> = ({
         onClose={() => setShowSendModal(false)}
         invoice={liveInvoice}
       />
+
+      {isOpen && !showSendModal && <PrintableInvoicePortal invoice={liveInvoice} />}
     </>
   );
 };

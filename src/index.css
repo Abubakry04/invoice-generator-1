@@ -96,6 +96,17 @@
     page-break-after: avoid !important;
     page-break-inside: avoid !important;
   }
+  body.printing-invoice > *:not(#invoice-print-portal) {
+    display: none !important;
+  }
+  body.printing-invoice #invoice-print-portal {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+  }
 }
 
 /* ==========================================================================

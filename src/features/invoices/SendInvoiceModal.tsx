@@ -24,6 +24,7 @@ import { formatDate, getDaysOverdue, getEffectiveStatus } from '../../lib/dates'
 import { useToast } from '../../components/ui/Toast';
 import { useInvoiceStore } from '../../store/invoiceStore';
 import { InvoicePDFDownloadButton } from './InvoicePDFDownloadButton';
+import { PrintableInvoicePortal, triggerInvoicePrint } from '../../components/invoices/PrintableInvoicePortal';
 
 export interface SendInvoiceModalProps {
   isOpen: boolean;
@@ -588,7 +589,7 @@ Thank you for your business!`;
                 size="md"
                 onClick={() => {
                   markAsSentIfRequested();
-                  window.print();
+                  triggerInvoicePrint();
                 }}
                 icon={<Printer className="w-4 h-4 text-slate-600 dark:text-slate-300" />}
                 className="font-semibold text-xs"
@@ -599,6 +600,7 @@ Thank you for your business!`;
           </div>
         )}
       </div>
+      <PrintableInvoicePortal invoice={invoice} />
     </Modal>
   );
 };
